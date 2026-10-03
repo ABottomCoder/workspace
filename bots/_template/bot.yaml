@@ -1,0 +1,14 @@
+name: <bot-name>
+slack_user_id: U_FILL_ME
+slack_bot_id: B_FILL_ME
+workspace: example technologies, Inc
+status: idle            # idle = free to take · in-use = someone is running it
+holder:             # who runs it now (person / machine); empty when idle
+purpose: what this bot is for
+secrets: local        # local = ~/.botdock/_template/secrets.env · ssm:<prefix> = AWS SSM <prefix>/{app_token,bot_token}
+# What the listener forwards to the session. Empty list = everything of that shape.
+listen_types: dm,app_mention,channel_message
+listen_channels:      # channel ids (empty = every channel the bot is a member of)
+listen_dm_users:      # user ids allowed to DM it (empty = anyone)
+allow_bot_senders:    # peer bot U…/B… ids whose messages pass (empty = ignore all bots; loop safety)
+bot_event_cap: 30     # max peer-bot events per hour (runaway-loop fuse)

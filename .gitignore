@@ -1,0 +1,5 @@
+node_modules/
+# Tokens never live in the repo. Per-machine runtime state is in ~/.botdock/<bot>/.
+.env
+*.env
+!templates/*.env.example
