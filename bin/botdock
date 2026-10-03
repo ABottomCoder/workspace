@@ -10,12 +10,13 @@
 #   botdock work <ticket> [--app <app>] [--title "…"] [--depends t1,t2]
 #                                         create or reuse the ticket's folder, link it to the app,
 #                                         print what to read (incl. the tickets it depends on)
+#   botdock log <ticket> "text"           append one timestamped line to the ticket's LOG.md
 #   botdock handoff <ticket>              archive the ticket's HANDOFF.md into history/, start a fresh one
 #   botdock close <ticket>                mark the ticket done (then publish its summary for the team)
 #
 # Layout (per machine, never committed), base ~/app_bot (override: BOTDOCK_HOME):
 #   slack/<app>/   identity only: bot.yaml, tickets.md (tickets it served), .runtime/ (tokens, log…)
-#   work/<ticket>/ the work, whichever app did it: ticket.yaml, CLAUDE.md, HANDOFF.md, data/, history/
+#   work/<ticket>/ the work, whichever app did it: ticket.yaml, CLAUDE.md, LOG.md, HANDOFF.md, data/, history/
 #   work/INDEX.md  one line per ticket, regenerated from every ticket.yaml
 # Read end (run_in_background, re-run after every wake): bin/wait-event.sh <app>
 # Full procedure for Claude: ../CLAUDE.md
@@ -165,6 +166,7 @@ cmd_work() {
     tpl ticket.yaml "" "$t" > "$y"; set_field "$y" created "$(now)"
     tpl ticket-CLAUDE.md "" "$t" > "$d/CLAUDE.md"
     tpl HANDOFF.md "" "$t" > "$d/HANDOFF.md"
+    tpl LOG.md "" "$t" > "$d/LOG.md"
     echo "new ticket folder: $d"
   fi
   [ -z "$title" ] || set_field "$y" title "$title"
@@ -183,6 +185,7 @@ cmd_work() {
   echo "read now:"
   echo "  $d/CLAUDE.md"
   echo "  $d/HANDOFF.md"
+  echo "  the end of $d/LOG.md"
   local dep
   for dep in $(field "$y" depends_on | tr ',' ' '); do
     if [ -f "$WORK/$dep/ticket.yaml" ]; then
@@ -191,6 +194,18 @@ cmd_work() {
       echo "  depends on $dep: NOT on this machine — ask the owner, or read its published summary (ticket system / docs)"
     fi
   done
+}
+
+cmd_log() {
+  local t=${1:-} text=${2:-}; [ -n "$t" ] && [ -n "$text" ] || die "usage: botdock log <ticket> \"text\""; valid_ticket "$t"
+  local f="$WORK/$t/LOG.md"; [ -f "$WORK/$t/ticket.yaml" ] || die "no ticket folder for $t"
+  [ -f "$f" ] || tpl LOG.md "" "$t" > "$f"
+  local app=""; local a; for a in "$APPS"/*/.runtime/.session-id; do
+    [ -f "$a" ] && [ "$(tr -d '[:space:]' < "$a")" = "${CLAUDE_CODE_SESSION_ID:-}" ] && app=$(basename "$(dirname "$(dirname "$a")")"); done
+  printf '%s %s%s\n' "$(now)" "${app:+[$app] }" "$(printf '%s' "$text" | tr '\n' ' ')" >> "$f"
+  local n; n=$(wc -l < "$f" | tr -d ' ')
+  [ "$n" -gt "${BOTDOCK_LOG_LIMIT:-300}" ] && echo "botdock: $f has $n lines. Condense: move the older lines to history/log-<date>.md and put a short digest at the top." >&2
+  return 0
 }
 
 cmd_handoff() {
@@ -240,7 +255,8 @@ case "${1:-}" in
   status) shift; cmd_status "$@" ;;
   down) shift; cmd_down "$@" ;;
   work) shift; cmd_work "$@" ;;
+  log) shift; cmd_log "$@" ;;
   handoff) shift; cmd_handoff "$@" ;;
   close) shift; cmd_close "$@" ;;
-  *) sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  *) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

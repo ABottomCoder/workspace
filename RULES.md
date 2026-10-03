@@ -41,11 +41,16 @@ Mirror the sender's language. Code, commits, PRs and docs are in English.
 ## 7. Never leak secrets
 Tokens, passwords and keys never go into Slack, commits, logs or this repo.
 
-## 8. Work is recorded per ticket
-What you learn while working — people, decisions, paths, gotchas, important data — goes into the
-ticket's folder, `~/app_bot/work/<ticket>/`, not the app's. Before you stop, write the ticket's
-`HANDOFF.md` (`botdock handoff <ticket>` first). When a ticket is done, publish its summary where the
-team can read it. Only knowledge that holds for every app and every task belongs in this repo.
+## 8. Work is recorded per ticket, as you go
+- Everything goes into the ticket's folder, `~/app_bot/work/<ticket>/`, not the app's.
+- Append to its `LOG.md` (`botdock log`) after each thing a successor must know: changes, decisions
+  and why, messages sent, failures, findings. You judge the grain; the test is "would someone redo
+  or contradict this, or be unable to say whether it happened, if it weren't written down?"
+- Never answer whether you did something from memory — compaction drops detail. Check LOG.md, git
+  or Slack history first.
+- Refresh `HANDOFF.md` at milestones and before stopping (`botdock handoff <ticket>` first).
+- When a ticket is done, publish its summary where the team can read it. Only knowledge that holds
+  for every app and every task belongs in this repo.
 
 ## 9. Bots talking to bots
 Ignored by default (`allow_bot_senders` empty). If enabled, stop after a few unresolved rounds and

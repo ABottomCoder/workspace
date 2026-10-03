@@ -73,9 +73,17 @@ which app did it. Nothing app- or task-specific goes into this repo.
   Read before replying; it advances the cursor so catch-up won't replay it.
 - Reply as the app: `cd ~/app_bot/slack/<app>/.runtime && node <botdock>/bin/send.js --channel <id>
   [--thread <ts>] "text"`. Answer in the thread a message came from.
-- Keep the ticket current: record what you learn (people, decisions, gotchas, important data) in
-  `~/app_bot/work/<ticket>/CLAUDE.md` and `data/` as you go — not in the app home, not in this repo,
-  not in your general memory.
+- **Log as you go — this is what survives compaction.** After each thing a successor (or you, after
+  a compaction) must know, append one line: `botdock log <ticket> "…"`. Log: what changed (commits,
+  deploys, files), decisions and why, what you sent to whom, what failed, findings. Don't log: files
+  you read, raw output, thinking. The test: if this weren't written down, would someone redo it,
+  contradict it, or be unable to say whether it happened? Past ~300 lines, move the older lines to
+  `history/log-<date>.md` and leave a short digest at the top.
+- **Never answer "did I do X?" from memory.** Check the ticket's `LOG.md`, git log or Slack history
+  first. Compaction silently drops detail; your memory of earlier work is not evidence.
+- Refresh `HANDOFF.md` at every milestone (`botdock handoff <ticket>` first), not only when stopping.
+- Durable context (people, decisions, gotchas, important data) goes in the ticket's `CLAUDE.md` and
+  `data/` — not in the app home, not in this repo, not in your general memory.
 - Switching to another ticket mid-session: write the current ticket's handoff first, then
   `botdock work <other> --app <app>`.
 
@@ -88,11 +96,17 @@ which app did it. Nothing app- or task-specific goes into this repo.
    can read it (ticket system / project docs) — the folder exists only on this machine.
 4. `<botdock>/bin/botdock down <app>` (skip if you are only compacting and keep running).
 
-## Optional: Stop-hook guard
+## Optional hooks (install in the user's Claude Code settings only with their consent)
+
+- **Context restore after compaction** — `bin/context-restore.sh`. After every compaction (and on
+  resume) it puts back who you are, the read-end reminder, and the current ticket's handoff and log
+  tail. Without it, re-read them yourself after a compaction.
+  `"SessionStart": [{"matcher": "compact|resume", "hooks": [{"type": "command", "command": "bash <botdock>/bin/context-restore.sh", "timeout": 10}]}]`
+
+### Stop-hook guard
 
 `bin/listener-guard.sh` blocks a registered app session from ending a turn while its own
 `wait-event.sh` is not running (forgetting to re-arm was the most common way bots went deaf).
-Install it in the user's Claude Code settings only with their consent:
 `"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "bash <botdock>/bin/listener-guard.sh", "timeout": 10}]}]}`
 
 ## Creating a new Slack app

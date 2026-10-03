@@ -22,12 +22,13 @@ task share: tooling, rules, templates.
 |------|------|
 | `RULES.md` | How every bot behaves |
 | `CLAUDE.md` | The step-by-step Claude follows to start, run and stop a bot |
-| `bin/botdock` | `list` / `up` / `run` / `status` / `down` / `work` / `handoff` / `close` |
+| `bin/botdock` | `list` / `up` / `run` / `status` / `down` / `work` / `log` / `handoff` / `close` |
 | `bin/listener.js`, `bin/guardian.sh` | Slack Socket Mode listener and the guardian that keeps it alive |
 | `bin/wait-event.sh` | Wakes the Claude session when a message arrives; never loses one between wakes |
 | `bin/read-since.mjs`, `bin/inbox.sh`, `bin/send.js` | Read a conversation, see what arrived, reply as the bot |
 | `bin/listener-guard.sh` | Optional Stop hook: a bot session can't finish a turn while it isn't listening |
-| `templates/` | App `bot.yaml`; ticket `ticket.yaml`, `CLAUDE.md`, `HANDOFF.md`; Slack app manifest; secrets format |
+| `bin/context-restore.sh` | Optional SessionStart hook: after a compaction, puts the app identity and the ticket's handoff + log back into context |
+| `templates/` | App `bot.yaml`; ticket `ticket.yaml`, `CLAUDE.md`, `LOG.md`, `HANDOFF.md`; Slack app manifest; secrets format |
 
 ## Quick start
 
