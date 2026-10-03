@@ -141,6 +141,7 @@ MONITOR_ALLOW_CHANNELS=$(field "$f" listen_channels)
 MONITOR_ALLOW_DM_USERS=$(field "$f" listen_dm_users)
 MONITOR_ALLOW_BOT_SENDERS=$(field "$f" allow_bot_senders)
 MONITOR_BOT_EVENT_CAP=$(field "$f" bot_event_cap)
+ACK_REACTION=$(field "$f" ack_reaction)
 EOF
   echo "ready: $app = $who · owner $owner · home $home"
   echo "next, in the Claude session:"

@@ -8,3 +8,4 @@ listen_channels:      # channel ids (empty = every channel the bot is a member o
 listen_dm_users:      # user ids allowed to DM it (empty = anyone)
 allow_bot_senders:    # peer bot U…/B… ids whose messages pass (empty = ignore all bots; loop safety)
 bot_event_cap: 30     # max peer-bot events per hour (runaway-loop fuse)
+ack_reaction: eyes     # emoji added to each message once the session has it (empty = off; needs reactions:write)

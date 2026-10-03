@@ -123,6 +123,8 @@ while :; do
   if printf '%s\n' "$line" | grep -Eq -- "$PAT"; then
     printf '%s\n' "$line"
     echo "$off" > "$STATE"
+    # Tell the sender we have it (emoji reaction), without delaying the wake-up: detached, best effort.
+    [[ "$line" == "[slack-event]"* ]] && ( cd "$DIR" && printf '%s' "$line" | node "$BIN/react.mjs" >>"$DIR/react.log" 2>&1 & )
     exit 0
   fi
   if [ -n "$CATCHUP" ] && [[ "$line" == "[start]"* ]]; then
