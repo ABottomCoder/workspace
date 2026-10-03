@@ -1,7 +1,6 @@
-# Local settings for one Slack app on THIS machine: ~/app_bot/slack/<bot>/bot.yaml
-# Created by `botdock up` from templates/bot.yaml. Never committed — it belongs to your task, not the team.
-name: <bot>
-purpose:              # what this app is doing for you on this machine
+# Local settings for one Slack app on THIS machine: ~/app_bot/slack/<app>/bot.yaml
+# Created by `botdock up` from templates/bot.yaml. Never committed — identity and listen settings for this app here; the work itself lives in ~/app_bot/work/<ticket>/
+name: <app>
 secrets: local        # local = .runtime/secrets.env (from the user) · ssm:<prefix> = AWS SSM <prefix>/{app_token,bot_token}
 # What the listener forwards to the session. Empty list = everything of that shape.
 listen_types: dm,app_mention,channel_message
