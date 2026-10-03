@@ -2,7 +2,7 @@
 
 Shared Slack app bots that any Claude Code session can take on by name.
 
-Pick a free bot, put its tokens on your machine, and tell Claude:
+Pick a free bot and tell Claude (it will ask you for the bot's two tokens):
 
 > start slack app example
 
