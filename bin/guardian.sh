@@ -1,6 +1,6 @@
 #!/bin/bash
 # Write end: keeps one Slack Socket Mode listener alive for <bot>, appending every line
-# to ~/.botdock/<bot>/<bot>-listener.log (which wait-event.sh reads).
+# to ~/app_bot/slack/<bot>/.runtime/<bot>-listener.log (which wait-event.sh reads).
 #   - respawns the listener if it crashes
 #   - recycles it every ROTATE_SECS (~12 min) so a silently stale socket can't leave the
 #     bot "connected but receiving nothing"
@@ -11,7 +11,7 @@
 set -u
 BOT="${1:?usage: guardian.sh <bot>}"
 BIN="$(cd "$(dirname "$0")" && pwd)"
-RUN="${BOTDOCK_RUNTIME:-$HOME/.botdock}/$BOT"
+RUN="${BOTDOCK_HOME:-$HOME/app_bot}/slack/$BOT/.runtime"
 LOG="$RUN/$BOT-listener.log"
 ROTATE_SECS="${LISTENER_ROTATE_SECS:-720}"
 [ -f "$RUN/.env" ] || { echo "[guardian] $RUN/.env missing — run: botdock up $BOT"; exit 2; }

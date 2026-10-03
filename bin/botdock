@@ -1,24 +1,38 @@
 #!/bin/bash
 # botdock — run a shared Slack app bot from any Claude Code session.
 #
-#   botdock list                     bots in the registry and who holds them
-#   botdock up <bot> [--owner U…]    prepare ~/.botdock/<bot>/ (tokens + listen config) and check
-#                                    nobody on this machine is already running it
+#   botdock list                     apps this machine has used (~/app_bot/slack/*)
+#   botdock up <bot> [--owner U…]    create or reuse the app's home, check tokens with Slack, refuse if
+#                                    another listener on this machine already uses the app
 #   botdock run <bot>                write end: the listener guardian (start as run_in_background)
 #   botdock status [bot]             listener / heartbeat / read end, per bot
 #   botdock down <bot>               stop this machine's listener and read end for <bot>
+#   botdock handoff <bot>            archive HANDOFF.md into history/ and start a fresh one
+#
+# App home (per machine, never committed): ~/app_bot/slack/<bot>/
+#   bot.yaml  CLAUDE.md  HANDOFF.md  history/  .runtime/ (tokens, listener log, offsets, cursors)
 #
 # Read end (also run_in_background, re-run after every wake): bin/wait-event.sh <bot>
 # Full procedure for Claude: ../CLAUDE.md
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BIN="$ROOT/bin"
-RUNROOT="${BOTDOCK_RUNTIME:-$HOME/.botdock}"
+APPS="${BOTDOCK_HOME:-$HOME/app_bot}/slack"
 
 die() { echo "botdock: $*" >&2; exit 1; }
-# Flat "key: value" reader for bots/<bot>/bot.yaml (no YAML dependency on purpose).
+# Flat "key: value" reader for <home>/bot.yaml (no YAML dependency on purpose).
 field() { sed -n "s/^$2:[[:space:]]*//p" "$1" | sed 's/[[:space:]]*#.*$//; s/^"\(.*\)"$/\1/' | head -1; }
-conf() { local f="$ROOT/bots/$1/bot.yaml"; [ -f "$f" ] || die "unknown bot '$1' (see: botdock list)"; echo "$f"; }
+conf() { local f="$APPS/$1/bot.yaml"; [ -f "$f" ] || die "no app home for '$1' on this machine — run: botdock up $1"; echo "$f"; }
+valid_name() { [[ "$1" =~ ^[a-z0-9][a-z0-9_-]*$ ]] || die "app name must be lowercase letters, digits, - or _ (got '$1')"; }
+
+new_home() {   # first use of <bot> on this machine: lay out its home from templates
+  local bot=$1 home="$APPS/$1" t
+  mkdir -p "$home/history" "$home/.runtime"; chmod 700 "$home/.runtime"
+  for t in bot.yaml:bot.yaml app-CLAUDE.md:CLAUDE.md HANDOFF.md:HANDOFF.md; do
+    [ -f "$home/${t#*:}" ] || sed "s/<bot>/$bot/g" "$ROOT/templates/${t%%:*}" > "$home/${t#*:}"
+  done
+  echo "new app home: $home"
+}
 
 hb_age() {   # seconds since the newest [heartbeat] in the log, empty if none
   local hb t; hb=$(tail -400 "$1" 2>/dev/null | grep '^\[heartbeat\] ' | tail -1 | sed -E 's/^\[heartbeat\] //; s/\..*$//')
@@ -28,11 +42,15 @@ hb_age() {   # seconds since the newest [heartbeat] in the log, empty if none
 }
 
 cmd_list() {
-  printf "%-10s %-8s %-22s %s\n" BOT STATUS HOLDER PURPOSE
-  for f in "$ROOT"/bots/*/bot.yaml; do
-    case "$f" in */_template/*) continue;; esac
-    printf "%-10s %-8s %-22s %s\n" "$(field "$f" name)" "$(field "$f" status)" "$(field "$f" holder)" "$(field "$f" purpose)"
+  printf "%-10s %-9s %-20s %s\n" APP LISTENER "LAST HANDOFF" PURPOSE
+  for f in "$APPS"/*/bot.yaml; do
+    [ -f "$f" ] || continue
+    local b; b=$(basename "$(dirname "$f")"); local l="down" h
+    lsof "$APPS/$b/.runtime/$b-listener.log" 2>/dev/null | grep -q node && l="up"
+    h=$(date -r "$APPS/$b/HANDOFF.md" "+%Y-%m-%d %H:%M" 2>/dev/null)
+    printf "%-10s %-9s %-20s %s\n" "$b" "$l" "${h:--}" "$(field "$f" purpose)"
   done
+  echo "(only this machine's apps. Which apps are free company-wide: see the registry in TODO.md)"
 }
 
 load_secrets() {   # <bot> <conf> -> sets APP_TOKEN BOT_TOKEN
@@ -40,7 +58,7 @@ load_secrets() {   # <bot> <conf> -> sets APP_TOKEN BOT_TOKEN
   APP_TOKEN=""; BOT_TOKEN=""
   case "$src" in
     local)
-      local s="$RUNROOT/$bot/secrets.env"
+      local s="$APPS/$bot/.runtime/secrets.env"
       [ -f "$s" ] || die "no tokens for $bot: put SLACK_APP_TOKEN=xapp-… and SLACK_BOT_TOKEN=xoxb-… in $s (chmod 600), or set 'secrets: ssm:<prefix>' in its bot.yaml"
       APP_TOKEN=$(sed -n 's/^SLACK_APP_TOKEN=//p' "$s" | tr -d "\"' "); BOT_TOKEN=$(sed -n 's/^SLACK_BOT_TOKEN=//p' "$s" | tr -d "\"' ") ;;
     ssm:*)
@@ -65,8 +83,9 @@ local_conflict() {   # is any node listener on this machine already using this a
 cmd_up() {
   local bot=${1:-}; [ -n "$bot" ] || die "usage: botdock up <bot> [--owner <slack_user_id>]"; shift
   local owner=""; while [ $# -gt 0 ]; do case "$1" in --owner) owner=${2:-}; shift 2;; *) die "unknown arg $1";; esac; done
+  valid_name "$bot"; [ -f "$APPS/$bot/bot.yaml" ] || new_home "$bot"
   local f; f=$(conf "$bot"); load_secrets "$bot" "$f"
-  local run="$RUNROOT/$bot"; mkdir -p "$run"; chmod 700 "$RUNROOT" "$run" 2>/dev/null
+  local home="$APPS/$bot" run="$APPS/$bot/.runtime"
   if c=$(local_conflict "$APP_TOKEN"); then
     case "$c" in *" $run") ;; *) die "this app token is already in use by another listener on this machine (pid/cwd: $c). Two listeners split the event stream — stop that one first.";; esac
   fi
@@ -81,7 +100,7 @@ cmd_up() {
   echo "$owner" > "$run/owner"
   umask 077
   cat > "$run/.env" <<EOF
-# generated by botdock up $(date -u +%FT%TZ) from bots/$bot/bot.yaml — do not edit, re-run botdock up
+# generated by botdock up $(date -u +%FT%TZ) from $home/bot.yaml — do not edit, re-run botdock up
 BOT_NAME=$bot
 SLACK_APP_TOKEN=$APP_TOKEN
 SLACK_BOT_TOKEN=$BOT_TOKEN
@@ -91,7 +110,8 @@ MONITOR_ALLOW_DM_USERS=$(field "$f" listen_dm_users)
 MONITOR_ALLOW_BOT_SENDERS=$(field "$f" allow_bot_senders)
 MONITOR_BOT_EVENT_CAP=$(field "$f" bot_event_cap)
 EOF
-  echo "ready: $bot = $who · owner $owner · runtime $run"
+  echo "ready: $bot = $who · owner $owner · home $home"
+  echo "read first: $home/CLAUDE.md and $home/HANDOFF.md"
   echo "next, in the Claude session (both as run_in_background):"
   echo "  1. $BIN/botdock run $bot"
   echo "  2. $BIN/wait-event.sh $bot"
@@ -101,10 +121,10 @@ EOF
 cmd_run() { local bot=${1:-}; [ -n "$bot" ] || die "usage: botdock run <bot>"; conf "$bot" >/dev/null; exec "$BIN/guardian.sh" "$bot"; }
 
 cmd_status() {
-  local bots=("$@"); [ ${#bots[@]} -gt 0 ] || bots=($(ls "$RUNROOT" 2>/dev/null))
+  local bots=("$@"); [ ${#bots[@]} -gt 0 ] || bots=($(ls "$APPS" 2>/dev/null))
   printf "%-10s %-9s %-10s %-8s %s\n" BOT LISTENER HEARTBEAT READER OWNER
   for b in "${bots[@]}"; do
-    local run="$RUNROOT/$b" log="$RUNROOT/$b/$b-listener.log" l="down" h="-" r="✗"
+    local run="$APPS/$b/.runtime" log="$APPS/$b/.runtime/$b-listener.log" l="down" h="-" r="✗"
     [ -d "$run" ] || continue
     lsof "$log" 2>/dev/null | grep -q node && l="up"
     h=$(hb_age "$log"); h=${h:+${h}s ago}; h=${h:--}
@@ -117,15 +137,26 @@ cmd_down() {
   local bot=${1:-}; [ -n "$bot" ] || die "usage: botdock down <bot>"
   local pids; pids=$(pgrep -f "guardian\.sh $bot\$"; pgrep -f "wait-event\.sh $bot( |\$)")
   [ -n "$pids" ] && kill $pids 2>/dev/null
-  rm -f "$RUNROOT/$bot/.session-id"
+  rm -f "$APPS/$bot/.runtime/.session-id"
   echo "stopped $bot on this machine (${pids:-nothing was running})"
 }
 
+cmd_handoff() {
+  local bot=${1:-}; [ -n "$bot" ] || die "usage: botdock handoff <bot>"; conf "$bot" >/dev/null
+  local home="$APPS/$bot" ts; ts=$(date -u +%Y%m%dT%H%MZ)
+  if [ -f "$home/HANDOFF.md" ] && ! cmp -s "$home/HANDOFF.md" <(sed "s/<bot>/$bot/g" "$ROOT/templates/HANDOFF.md"); then
+    mv "$home/HANDOFF.md" "$home/history/handoff-$ts.md"; echo "archived: $home/history/handoff-$ts.md"
+  fi
+  sed "s/<bot>/$bot/g" "$ROOT/templates/HANDOFF.md" > "$home/HANDOFF.md"
+  echo "write the new handoff into: $home/HANDOFF.md"
+}
+
 case "${1:-}" in
+  handoff) shift; cmd_handoff "$@" ;;
   list) cmd_list ;;
   up) shift; cmd_up "$@" ;;
   run) shift; cmd_run "$@" ;;
   status) shift; cmd_status "$@" ;;
   down) shift; cmd_down "$@" ;;
-  *) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  *) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

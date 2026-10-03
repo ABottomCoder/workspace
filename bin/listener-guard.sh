@@ -7,7 +7,7 @@
 # Hong's DM went unanswered). This hook makes forgetting impossible instead of unlikely.
 #
 # How:
-#   - Which bot is this session? <BOTS_ROOT>/<bot>/.session-id holds the Claude session id
+#   - Which bot is this session? ~/app_bot/slack/<bot>/.runtime/.session-id holds the Claude session id
 #     of the session currently playing that bot (written at bootstrap). No match → not a
 #     bot session → allow.
 #   - Is ITS listener running? A `wait-event.sh <bot>` process whose ancestor chain contains
@@ -20,7 +20,7 @@
 # Wiring (workspace .claude/settings.local.json):
 #   "Stop": [{"hooks":[{"type":"command","command":"bash <botdock>/bin/listener-guard.sh","timeout":10}]}]
 set -u
-BOTS_ROOT="${BOTDOCK_RUNTIME:-$HOME/.botdock}"
+APPS="${BOTDOCK_HOME:-$HOME/app_bot}/slack"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 input=$(cat)
 sid=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("session_id",""))' 2>/dev/null)
@@ -28,9 +28,9 @@ active=$(printf '%s' "$input" | python3 -c 'import json,sys; print(str(json.load
 [ -n "$sid" ] || exit 0
 
 bot=""
-for f in "$BOTS_ROOT"/*/.session-id; do
+for f in "$APPS"/*/.runtime/.session-id; do
   [ -f "$f" ] || continue
-  if [ "$(tr -d '[:space:]' < "$f")" = "$sid" ]; then bot=$(basename "$(dirname "$f")"); break; fi
+  if [ "$(tr -d '[:space:]' < "$f")" = "$sid" ]; then bot=$(basename "$(dirname "$(dirname "$f")")"); break; fi
 done
 [ -n "$bot" ] || exit 0
 

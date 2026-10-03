@@ -12,7 +12,7 @@
 # usage: inbox.sh <bot>
 set -u
 BOT="${1:?usage: inbox.sh <bot>}"
-DIR="${BOTDOCK_RUNTIME:-$HOME/.botdock}/$BOT"
+DIR="${BOTDOCK_HOME:-$HOME/app_bot}/slack/$BOT/.runtime"
 LOG="$DIR/$BOT-listener.log"; STATE="$DIR/.inbox-offset"
 [ -f "$LOG" ] || { echo "[inbox] no log at $LOG"; exit 2; }
 size=$(stat -f %z "$LOG")

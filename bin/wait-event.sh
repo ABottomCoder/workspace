@@ -39,7 +39,7 @@
 set -u
 BOT="${1:?usage: wait-event.sh <bot> [pattern]}"
 PAT="${2:-\[slack-event\]}"
-DIR="${BOTDOCK_RUNTIME:-$HOME/.botdock}/$BOT"
+DIR="${BOTDOCK_HOME:-$HOME/app_bot}/slack/$BOT/.runtime"
 LOG="$DIR/$BOT-listener.log"
 STATE="$DIR/.wait-offset"
 WS="$DIR"   # cursors (.read-cursors.json) + .env live in the runtime dir

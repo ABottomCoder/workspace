@@ -23,8 +23,8 @@ Agreed design:
   catches most of it. Atomic alternative (DynamoDB conditional write) rejected: every colleague
   would need AWS credentials.
 
-Open: confirm the channel name, then create channel + canvas, seed the six current apps, and move
-`status`/`holder` out of `bots/<name>/bot.yaml` (the canvas becomes the single source).
+Open: confirm the channel name, then create channel + canvas and seed the six current apps.
+The canvas is the only list of apps — the repo holds no per-app files (decided 2026-10-02).
 
 ## Remotes (pending names from Hong)
 Company remote (Bitbucket `example`?) as `origin`, plus a private personal GitHub mirror pushed in
