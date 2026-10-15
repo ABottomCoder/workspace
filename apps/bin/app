@@ -111,7 +111,7 @@ EOF
   local vc who; vc=$(channel_cmd "$APP_CHANNEL" validate-creds) || die "channel $APP_CHANNEL has no validate-creds"
   ensure_node; who=$(cd "$APP_RUN" && $vc 2>&1) || die "credentials for $APP_ID rejected: $who"
   # One owning session per app.
-  local sid=${CLAUDE_CODE_SESSION_ID:-} prev; prev=$(tr -d '[:space:]' < "$APP_RUN/.session-id" 2>/dev/null)
+  local sid=${CLAUDE_CODE_SESSION_ID:-} prev; prev=$(cat "$APP_RUN/.session-id" 2>/dev/null | tr -d '[:space:]')
   if [ -n "$prev" ] && [ "$prev" != "$sid" ] && [ "$(reader_state)" = ok ]; then
     die "$APP_ID is held by session $prev and its read end is running. Stop it there first (app down $APP_ID)."
   fi
