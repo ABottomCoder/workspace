@@ -1,0 +1,31 @@
+#!/bin/bash
+# Framework repo pre-commit guard (spec §3.12). Blocks a commit that stages:
+#   - any path under user/, business/ or .staging/
+#   - secret-looking tokens (Slack, GitHub, AWS, private keys, Anthropic, Stripe live)
+#   - absolute home paths (/Users/<name>, /home/<name>)
+#   - terms from user/denylist.txt (case-insensitive, word boundaries)
+# Matched secret values are never printed. Install: tools/guard/install.sh. Bypass (rare, deliberate):
+# git commit --no-verify.
+here="$(cd "$(dirname "$(readlink "$0" 2>/dev/null || echo "$0")")" && pwd)"
+. "$here/patterns.sh"
+top=$(git rev-parse --show-toplevel) || exit 1
+deny="${GUARD_DENYLIST:-$top/user/denylist.txt}"
+deny_re=$(guard_denylist_re "$deny") || deny_re=""
+fail=0
+report() { echo "pre-commit: $*" >&2; fail=1; }
+
+files=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -n "$files" ] || exit 0
+while IFS= read -r f; do
+  if printf '%s\n' "$f" | grep -qE "$GUARD_BLOCKED_DIRS"; then report "blocked path (personal/business data): $f"; continue; fi
+  n=$(git show ":$f" 2>/dev/null | LC_ALL=C grep -anE "$GUARD_SECRET_RE" | cut -d: -f1 | paste -sd, -)
+  [ -n "$n" ] && report "secret-like token: $f line(s) $n (value not shown)"
+  blob=$(git show ":$f" 2>/dev/null | LC_ALL=C grep -I '' ) || continue   # text checks: skip binary/empty
+  hits=$(printf '%s\n' "$blob" | grep -nE "$GUARD_HOMEPATH_RE" | cut -c1-120)
+  if [ -n "$hits" ]; then
+    report "absolute home path in $f:"; printf '%s\n' "$hits" | sed 's/^/    /' >&2; fi
+  hits=""; [ -n "$deny_re" ] && hits=$(printf '%s\n' "$blob" | grep -niE "$deny_re" | cut -c1-120)
+  if [ -n "$hits" ]; then
+    report "denylist term in $f:"; printf '%s\n' "$hits" | sed 's/^/    /' >&2; fi
+done <<< "$files"
+[ $fail = 0 ] || { echo "pre-commit: commit blocked. Fix the above (or move the data to user/ or business/)." >&2; exit 1; }

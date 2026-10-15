@@ -1,9 +1,9 @@
 {
-  "name": "botdock",
+  "name": "apps",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Shared Slack app bots that any Claude Code session can take on by name",
+  "description": "Chat apps (bots) a Claude Code session can run by name; channel adapters under channels/",
   "dependencies": {
     "@slack/socket-mode": "^2.0.0",
     "@slack/web-api": "^7.0.0",

@@ -1,0 +1,40 @@
+# Slack app manifest template: create the app from it (rename first). The app_home block enables
+# the Messages Tab with sending allowed; without it DMs to the app fail silently.
+display_information:
+  name: MyBot            # ← rename
+  description: Teammate app run from a Claude Code session (DMs, @mentions, channel messages)
+  background_color: "#1a1a2e"
+features:
+  app_home:
+    messages_tab_enabled: true
+    messages_tab_read_only_enabled: false
+  bot_user:
+    display_name: mybot  # ← rename
+    always_online: true
+oauth_config:
+  scopes:
+    bot:
+      - app_mentions:read   # receive @mentions of the bot
+      - chat:write          # post replies as the bot
+      - reactions:write     # eyes reaction on each message the session receives (ack_reaction)
+      - files:write         # send.js --upload
+      - im:history          # read DM history (context)
+      - im:read             # detect DM channels
+      - im:write            # open/send DMs
+      - channels:history    # read channel context around a mention (public)
+      - groups:history      # ditto, private channels
+      - users:read          # resolve user ids -> names
+      - channels:read       # resolve channel ids -> names
+      - groups:read         # resolve private channel names
+settings:
+  event_subscriptions:
+    bot_events:
+      - app_mention         # someone @mentions the bot in a channel
+      - message.im          # someone DMs the bot
+      - message.channels    # any message in a public channel the bot is in (listen_types: channel_message)
+      - message.groups      # ditto, private channels
+  interactivity:
+    is_enabled: false
+  socket_mode_enabled: true
+  org_deploy_enabled: false
+  token_rotation_enabled: false

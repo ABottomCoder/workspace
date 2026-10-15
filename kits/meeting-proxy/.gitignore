@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+context/*
+!context/.gitkeep
+tmp/*
+!tmp/.gitkeep
+*.log
+.DS_Store

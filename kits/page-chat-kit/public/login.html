@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#0c7d70,#083f39);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#1d2b31}
+  .card{background:#fff;border-radius:16px;padding:36px 34px;width:340px;box-shadow:0 18px 50px #0004}
+  h1{margin:0 0 4px;font-size:21px;color:#0c7d70}
+  p.sub{margin:0 0 22px;color:#7a8a8f;font-size:13px}
+  label{display:block;font-size:13px;color:#5f7178;margin:14px 0 5px}
+  input{width:100%;padding:11px 13px;border:1px solid #d7e0df;border-radius:9px;font-size:15px}
+  input:focus{outline:none;border-color:#0c7d70}
+  button{width:100%;margin-top:22px;padding:12px;border:0;border-radius:9px;background:#0c7d70;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+  button:hover{background:#0a6a5f}
+  .err{color:#c0392b;font-size:13px;margin-top:12px;min-height:18px}
+  .lang{display:block;width:100%;margin-top:14px;background:none;border:0;padding:0;color:#7a8a8f;font-size:12.5px;cursor:pointer}
+  .lang:hover{background:none;color:#0c7d70}
+</style>
+</head>
+<body>
+<form class="card" id="f">
+  <h1 id="brand">Chat Portal</h1>
+  <p class="sub" data-i18n="loginSub">Please sign in</p>
+  <label data-i18n="loginUser">Username</label>
+  <input id="user" autocomplete="username" autofocus>
+  <label data-i18n="loginPwd">Password</label>
+  <input id="password" type="password" autocomplete="current-password">
+  <button type="submit" data-i18n="loginSignin">Sign in</button>
+  <div class="err" id="err"></div>
+  <button type="button" class="lang" data-i18n-next-lang onclick="toggleLang()">Language</button>
+</form>
+<script src="/_portal/static/strings.js"></script>
+<script>
+  const t = (k) => pckFormat(k);
+  function applyI18n() { pckApplyStatic(t); }
+  function toggleLang() { pckCycleLang(); document.getElementById('err').textContent = ''; applyI18n(); }
+  applyI18n();
+  // brand from server config
+  fetch('/_portal/api/config').then((r) => r.json()).then((c) => {
+    if (c.brand) { document.getElementById('brand').textContent = c.brand; document.title = c.brand; }
+  }).catch(() => {});
+  const f = document.getElementById('f'), err = document.getElementById('err');
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault(); err.textContent = '';
+    if (!user.value.trim() || !password.value) { err.textContent = t('loginFill'); return; }
+    let r = null, j = {};
+    try {
+      r = await fetch('/_portal/api/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: user.value.trim(), password: password.value })
+      });
+      j = await r.json().catch(() => ({}));
+    } catch (e2) { err.textContent = t('netErr'); return; }
+    if (r.ok) { location.href = '/'; return; }
+    err.textContent = j.code === 'bad_credentials' ? t('loginBad') : (j.error || t('loginFail'));
+  });
+</script>
+</body>
+</html>

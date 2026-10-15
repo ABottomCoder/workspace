@@ -1,7 +1,0 @@
-# One ticket on this machine: ~/app_bot/work/<ticket>/ticket.yaml. Maintained by `botdock work/close`.
-title:
-status: open          # open | done
-apps:                 # apps that worked on it, comma-separated (filled in by botdock work --app)
-depends_on:           # other ticket ids this one builds on, comma-separated
-created:
-updated:

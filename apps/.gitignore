@@ -1,5 +1,5 @@
 node_modules/
-# Tokens never live in the repo. Per-machine runtime state is in ~/.botdock/<bot>/.
+# Credentials and runtime state never live here: business/<co>/.secrets/ and business/<co>/apps/<id>/.runtime/.
 .env
 *.env
-!templates/*.env.example
+!channels/*/secrets.env.example

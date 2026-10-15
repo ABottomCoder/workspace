@@ -1,0 +1,35 @@
+{
+  "cleanupPeriodDays": 36500,
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact|clear",
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/tools/work/restore\"", "timeout": 10, "statusMessage": "Restoring work item" }
+        ]
+      },
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          { "type": "command", "command": "f=\"$CLAUDE_PROJECT_DIR/apps/bin/context-restore.sh\"; if [ -f \"$f\" ]; then exec bash \"$f\"; fi; exit 0", "timeout": 10, "statusMessage": "Restoring app context" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/tools/rollover/check.sh\"", "timeout": 10 },
+          { "type": "command", "command": "f=\"$CLAUDE_PROJECT_DIR/apps/bin/listener-guard.sh\"; if [ -f \"$f\" ]; then exec bash \"$f\"; fi; exit 0", "timeout": 10, "statusMessage": "App listener check" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/tools/guard/route-check.sh\"", "timeout": 10, "statusMessage": "Routing check" }
+        ]
+      }
+    ]
+  }
+}

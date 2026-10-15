@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat Portal</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font:14.5px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#1d2b31}
+  #frame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#f5f7f7}
+  /* Floating menu: one collapsed FAB that fans out into private / group / password / language / sign-out */
+  /* z-index 33 > panel(31)/members-pop(32): the menu must stay clickable while the panel is open.
+     The container itself ignores clicks (its box overlaps the panel bottom); only the FAB and open menu take them. */
+  .launcher{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;align-items:flex-end;gap:11px;z-index:33;pointer-events:none}
+  .fab{width:56px;height:56px;border-radius:50%;background:#0c7d70;color:#fff;border:0;cursor:pointer;position:relative;pointer-events:auto;
+    box-shadow:0 8px 22px #0a6a5f55;display:grid;place-items:center;font-size:23px;transition:transform .15s}
+  .fab:hover{transform:scale(1.06)}
+  .fab .badge{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;border-radius:9px;background:#e74c3c;color:#fff;
+    font-size:11px;line-height:18px;text-align:center;padding:0 4px}
+  .menu{display:flex;flex-direction:column;align-items:flex-end;gap:9px;
+    opacity:0;transform:translateY(10px) scale(.96);transform-origin:bottom right;pointer-events:none;transition:opacity .15s,transform .15s}
+  .menu.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+  .mhead{font-size:12px;color:#5a6b71;background:#fff;border:1px solid #e3eae9;border-radius:8px;padding:5px 11px;box-shadow:0 4px 12px #0a6a5f18}
+  .mitem{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e3eae9;color:#1d2b31;
+    border-radius:24px;padding:9px 16px;font:inherit;font-size:14px;cursor:pointer;box-shadow:0 6px 18px #0a6a5f22;white-space:nowrap;transition:transform .1s,background .1s}
+  .mitem:hover{background:#f0f5f4;transform:translateY(-1px)}
+  .mitem.out{color:#c0392b}
+  .mitem.out:hover{background:#fdecea}
+  .mitem .mi-ic{font-size:17px}
+  .mitem .badge{position:static;margin-left:2px;min-width:18px;height:18px;border-radius:9px;background:#e74c3c;color:#fff;
+    font-size:11px;line-height:18px;text-align:center;padding:0 4px}
+  /* Panel */
+  .panel{position:fixed;right:22px;bottom:90px;width:378px;max-width:calc(100vw - 32px);height:540px;max-height:calc(100vh - 130px);
+    background:#fff;border-radius:16px;box-shadow:0 20px 60px #0004;display:none;flex-direction:column;overflow:hidden;z-index:31}
+  .panel.open{display:flex}
+  .phead{background:#0c7d70;color:#fff;padding:13px 16px;display:flex;align-items:center;gap:9px}
+  .phead .t{font-weight:700}
+  .phead .who{margin-left:auto;font-size:12px;opacity:.85}
+  .phead .x{cursor:pointer;font-size:18px;opacity:.9;margin-left:10px}
+  .msgs{flex:1;overflow-y:auto;padding:14px;background:#f6f8f8;display:flex;flex-direction:column;gap:10px}
+  .m{max-width:80%;display:flex;flex-direction:column}
+  .m .meta{font-size:11px;color:#8a9aa0;margin:0 4px 2px}
+  .m .bub{padding:8px 12px;border-radius:12px;white-space:pre-wrap;word-break:break-word}
+  .m.me{align-self:flex-end;align-items:flex-end}
+  .m.me .bub{background:#0c7d70;color:#fff;border-bottom-right-radius:4px}
+  .m.them{align-self:flex-start;align-items:flex-start}
+  .m.them .bub{background:#fff;border:1px solid #e3eae9;border-bottom-left-radius:4px}
+  .m.agentmsg .bub{background:#e7f4f1;border-color:#bfe3d9}
+  .senderr{display:none;padding:7px 12px;background:#fdecea;color:#c0392b;font-size:12.5px;border-top:1px solid #f5c6c0}
+  .senderr.show{display:block}
+  .foot{border-top:1px solid #eef2f1;padding:10px;display:flex;gap:8px;align-items:flex-end}
+  .foot textarea{flex:1;resize:none;border:1px solid #d7e0df;border-radius:9px;padding:9px 11px;font:inherit;height:40px;max-height:120px}
+  .foot textarea:focus{outline:none;border-color:#0c7d70}
+  .foot button{border:0;background:#0c7d70;color:#fff;border-radius:9px;padding:0 16px;height:40px;font-weight:700;cursor:pointer}
+  .foot .attach{background:#eef4f3;color:#0c7d70;font-size:19px;padding:0 12px}
+  .empty{margin:auto;color:#9db0b6;font-size:13px;text-align:center}
+  .att-img{max-width:200px;max-height:180px;border-radius:10px;display:block;cursor:pointer;margin-top:2px}
+  .att-file{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e3eae9;border-radius:10px;padding:8px 11px;text-decoration:none;color:#1d2b31;max-width:230px;margin-top:2px}
+  .att-file .ic{font-size:22px;flex:0 0 auto}
+  .att-file .finfo{display:flex;flex-direction:column;min-width:0}
+  .att-file .fn{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .att-file .fs{font-size:11px;color:#8a9aa0}
+  .m.me .att-file{background:#0a6a5f;border-color:#0a6a5f;color:#fff}
+  .m.me .att-file .fs{color:#cfeae4}
+  /* @-mentions */
+  .m.mentioned .bub{background:#fff7e6;border-color:#f0c675}
+  .m.me.mentioned .bub{background:#0a6a5f}
+  .mention-chip{color:#0c7d70;font-weight:700;background:#e7f4f1;border-radius:4px;padding:0 3px}
+  .m.me .mention-chip{color:#fff;background:#ffffff33}
+  .atme-tag{display:inline-block;font-size:10px;font-weight:700;color:#b5842a;background:#fbf1dc;border-radius:4px;padding:1px 6px;margin:0 0 3px}
+  .members-btn{cursor:pointer;font-size:16px;opacity:.9;margin-left:6px}
+  .members-pop{position:absolute;right:14px;top:52px;background:#fff;border:1px solid #e3eae9;border-radius:12px;box-shadow:0 12px 30px #0003;padding:6px;min-width:160px;z-index:32;display:none}
+  .members-pop.open{display:block}
+  .members-pop .hd{font-size:12px;color:#8a9aa0;padding:4px 10px 6px}
+  .members-pop .mi{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;font-size:13.5px;color:#1d2b31}
+  .members-pop .mi:hover{background:#f0f5f4}
+  .members-pop .mi .dot{width:7px;height:7px;border-radius:50%;background:#12897b;flex:0 0 auto}
+  .members-pop .mi .r{margin-left:auto;font-size:11px;color:#9db0b6}
+  .badge.at{background:#e67e22}
+  /* Change-password modal */
+  .modal{position:fixed;inset:0;background:#0006;z-index:40;display:none;align-items:center;justify-content:center}
+  .modal.open{display:flex}
+  .card{background:#fff;border-radius:14px;box-shadow:0 24px 70px #0005;width:340px;max-width:calc(100vw - 32px);padding:20px}
+  .card h3{margin:0 0 4px;font-size:16px;color:#0c7d70}
+  .card .sub{margin:0 0 16px;font-size:12px;color:#8a9aa0}
+  .card label{display:block;font-size:12px;color:#5a6b71;margin:11px 0 4px}
+  .card input{width:100%;border:1px solid #d7e0df;border-radius:9px;padding:9px 11px;font:inherit}
+  .card input:focus{outline:none;border-color:#0c7d70}
+  .card .msg{font-size:12.5px;margin-top:11px;min-height:16px}
+  .card .msg.err{color:#e74c3c}
+  .card .msg.ok{color:#0c7d70}
+  .card .acts{display:flex;gap:9px;margin-top:16px}
+  .card .acts button{flex:1;border:0;border-radius:9px;padding:10px 0;font:inherit;font-weight:700;cursor:pointer}
+  .card .acts .cancel{background:#eef2f1;color:#5a6b71}
+  .card .acts .ok{background:#0c7d70;color:#fff}
+  .card .acts .ok:disabled{opacity:.5;cursor:not-allowed}
+</style>
+</head>
+<body>
+<iframe id="frame" referrerpolicy="no-referrer"></iframe>
+
+<div class="modal" id="pwdModal">
+  <div class="card" onclick="event.stopPropagation()">
+    <h3 data-i18n="pwdTitle">Change password</h3>
+    <p class="sub" id="pwdWho"></p>
+    <label data-i18n="pwdCur">Current password</label>
+    <input type="password" id="pwCur" autocomplete="current-password">
+    <label data-i18n="pwdNew">New password (min 6 chars)</label>
+    <input type="password" id="pwNew" autocomplete="new-password">
+    <label data-i18n="pwdNew2">Confirm new password</label>
+    <input type="password" id="pwNew2" autocomplete="new-password">
+    <div class="msg" id="pwMsg"></div>
+    <div class="acts">
+      <button class="cancel" data-i18n="cancel" onclick="closePwd()">Cancel</button>
+      <button class="ok" id="pwSubmit" data-i18n="save" onclick="submitPwd()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel">
+  <div class="phead">
+    <span id="ptitle" class="t">Chat</span>
+    <span class="members-btn" id="membersBtn" style="display:none" onclick="toggleMembers(event)" data-i18n-title="members" title="Members">👥</span>
+    <span class="who" id="who"></span>
+    <span class="x" onclick="closePanel()" data-i18n-title="close" title="Close">✕</span>
+  </div>
+  <div class="members-pop" id="membersPop"></div>
+  <div class="msgs" id="msgs"></div>
+  <div class="senderr" id="sendErr"></div>
+  <div class="foot">
+    <input type="file" id="file" style="display:none" onchange="uploadFile()">
+    <button class="attach" id="attachBtn" onclick="document.getElementById('file').click()" data-i18n-title="attach" title="Attach file">📎</button>
+    <textarea id="inp" data-i18n-ph="inputPh" placeholder="Type a message, Enter to send…"></textarea>
+    <button data-i18n="send" onclick="send()">Send</button>
+  </div>
+</div>
+
+<div class="launcher" id="launcher">
+  <div class="menu" id="menu">
+    <div class="mhead" id="mhead"></div>
+    <button class="mitem" onclick="closeMenu();openPanel('private')"><span class="mi-ic">💬</span><span data-i18n="menuChat"></span><span class="badge" id="bp" style="display:none"></span></button>
+    <button class="mitem" onclick="closeMenu();openPanel('group')"><span class="mi-ic">👥</span><span data-i18n="menuGroup"></span><span class="badge" id="bg" style="display:none"></span></button>
+    <button class="mitem" onclick="closeMenu();openPwd()"><span class="mi-ic">⚙️</span><span data-i18n="menuPwd"></span></button>
+    <button class="mitem" onclick="toggleLang()"><span class="mi-ic">🌐</span><span data-i18n-next-lang></span></button>
+    <button class="mitem out" onclick="closeMenu();logout()"><span class="mi-ic">🚪</span><span data-i18n="menuLogout"></span></button>
+  </div>
+  <button class="fab" id="mainFab" onclick="toggleMenu(event)" data-i18n-title="fabOpen" title="Menu">
+    <span id="fabIcon">💬</span><span class="badge" id="bmain" style="display:none"></span>
+  </button>
+</div>
+
+<script src="/_portal/static/strings.js"></script>
+<script>
+let me = null, scope = null, es = null, AGENT = 'agent', AGENTLABEL = '';
+const unread = { private: 0, group: 0 };
+const PAGE = 30;
+let oldestId = null, hasMore = false, loadingOlder = false, paneReady = false;
+let roster = [];
+const mentionUnread = { group: false };
+let BRAND = '', MAXMB = 50, leaving = false;
+
+/* ---- i18n: strings live in /_portal/static/strings.js -----------------
+   Server errors are localized by their `code`, with the English text as
+   fallback so an un-mapped code still says something useful.            */
+const SRV_ERR = { bad_current: 'errBadCurrent', pwd_short: 'errPwdShort', pwd_long: 'errPwdLong',
+  pwd_same: 'errPwdSame', empty: 'errEmpty', content_long: 'errContentLong',
+  file_too_large: 'errFileLarge', file_type: 'errFileType', upload_failed: 'errUploadFailed' };
+function t(key, vars) {
+  return pckFormat(key, Object.assign({ agent: AGENTLABEL, brand: BRAND, mb: MAXMB, name: me ? me.label : '' }, vars || {}));
+}
+function srvErr(j, fallbackKey) {  // localize by code; fall back to the server's own text
+  const key = j && j.code && SRV_ERR[j.code];
+  return key ? t(key) : ((j && j.error) || t(fallbackKey || 'netErr'));
+}
+function applyI18n() {
+  pckApplyStatic(t);
+  document.getElementById('mainFab').title = t(menuOpen ? 'fabClose' : 'fabOpen');
+  if (scope) document.getElementById('ptitle').textContent = t(scope === 'group' ? 'titleGroup' : 'titlePrivate');
+  const emptyEl = document.querySelector('#msgs .empty'); if (emptyEl) emptyEl.textContent = t('empty');
+  if (document.getElementById('membersPop').classList.contains('open')) renderMembers();
+  if (document.getElementById('pwdModal').classList.contains('open'))
+    document.getElementById('pwdWho').textContent = t('pwdAccount');
+}
+function toggleLang() {
+  pckCycleLang();
+  applyI18n();
+  if (scope) loadHistory().then(scrollBottom);  // re-render bubbles so @me tags switch too
+}
+
+async function boot() {
+  const cfg = await (await fetch('/_portal/api/config')).json();
+  AGENT = cfg.agentUser; AGENTLABEL = cfg.agentLabel; document.title = cfg.brand;
+  BRAND = cfg.brand || ''; MAXMB = cfg.maxUploadMb || 50;
+  me = await (await fetch('/_portal/api/me')).json();
+  applyI18n();
+  document.getElementById('who').textContent = me.label;
+  document.getElementById('mhead').textContent = '👤 ' + me.label;
+  if (cfg.frameEnabled) {
+    const fr = await (await fetch('/_portal/api/frame')).json();
+    document.getElementById('frame').src = fr.path;
+  } else {
+    // standalone (no site wrapping): hide iframe, show a plain background
+    document.getElementById('frame').style.display = 'none';
+    document.body.style.background = '#eef2f2';
+  }
+  roster = await (await fetch('/_portal/api/roster')).json();
+  connectSSE();
+}
+function connectSSE() {
+  es = new EventSource('/_portal/api/chat/stream');
+  es.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    const viewing = m.scope === scope && (scope === 'group' || m.thread_user === me.user);
+    if (viewing) { appendMsg(m); scrollBottom(); }
+    else {
+      unread[m.scope]++;
+      if (m.scope === 'group' && m.mentions && m.mentions.includes(me.user)) mentionUnread.group = true;
+      renderBadges();
+    }
+  };
+  // EventSource auto-reconnects, but after session expiry it would retry forever and the page looks dead — probe first
+  es.onerror = async () => {
+    if (leaving) return;
+    try { if ((await fetch('/_portal/api/me')).status === 401) sessionGone(); } catch (e) {/* offline */}
+  };
+}
+function sessionGone() {
+  if (leaving) return;
+  leaving = true; if (es) es.close();
+  alert(t('sessionExpired'));
+  location.href = '/_portal/login';
+}
+async function logout() {
+  if (!confirm(t('logoutConfirm'))) return;
+  try {
+    const r = await fetch('/_portal/api/logout', { method: 'POST' });
+    if (!r.ok) throw new Error('logout failed');
+  } catch (e) { alert(t('logoutFail')); return; }
+  leaving = true; if (es) es.close();
+  location.href = '/_portal/login';
+}
+function renderBadges() {
+  for (const [s, id] of [['private','bp'],['group','bg']]) {
+    const b = document.getElementById(id);
+    if (unread[s] > 0 && scope !== s) {
+      b.style.display = '';
+      const atMe = s === 'group' && mentionUnread.group;
+      b.textContent = atMe ? '@' : unread[s];
+      b.classList.toggle('at', !!atMe);
+    } else { b.style.display = 'none'; b.classList.remove('at'); }
+  }
+  // When collapsed, the main FAB shows total unread (an @ takes priority)
+  const total = (scope !== 'private' ? unread.private : 0) + (scope !== 'group' ? unread.group : 0);
+  const atMe = mentionUnread.group && scope !== 'group';
+  const bm = document.getElementById('bmain');
+  if (total > 0) { bm.style.display = ''; bm.textContent = atMe ? '@' : total; bm.classList.toggle('at', !!atMe); }
+  else { bm.style.display = 'none'; bm.classList.remove('at'); }
+}
+let menuOpen = false;
+function toggleMenu(e) {
+  if (e) e.stopPropagation();
+  menuOpen = !menuOpen;
+  document.getElementById('menu').classList.toggle('open', menuOpen);
+  document.getElementById('fabIcon').textContent = menuOpen ? '✕' : '💬';
+  document.getElementById('mainFab').title = t(menuOpen ? 'fabClose' : 'fabOpen');
+}
+function closeMenu() {
+  if (!menuOpen) return;
+  menuOpen = false;
+  document.getElementById('menu').classList.remove('open');
+  document.getElementById('fabIcon').textContent = '💬';
+  document.getElementById('mainFab').title = t('fabOpen');
+}
+document.addEventListener('click', (e) => {
+  if (menuOpen && !document.getElementById('launcher').contains(e.target)) closeMenu();
+});
+function fmt(ts) {
+  const d = new Date(ts); if (isNaN(d)) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function fsize(n){if(n==null)return'';const u=['B','KB','MB','GB'];let i=0,x=n;while(x>=1024&&i<3){x/=1024;i++;}return x.toFixed(x<10&&i>0?1:0)+u[i];}
+function iconFor(e){e=(e||'').toLowerCase();
+  if(e==='zip')return'🗜️'; if(e==='pdf')return'📕';
+  if(['doc','docx'].includes(e))return'📘'; if(['xls','xlsx','csv'].includes(e))return'📗';
+  if(['ppt','pptx'].includes(e))return'📙'; if(['mp4','mov','webm'].includes(e))return'🎬';
+  if(['mp3','wav','m4a'].includes(e))return'🎵'; return'📄';}
+function renderContent(text) {  // escape + single-pass highlight of @label/@user as chips (no nesting)
+  const h = escapeHtml(text);
+  const names = [...new Set(roster.flatMap((a) => [a.label, a.user]).filter(Boolean))]
+    .sort((x, y) => y.length - x.length)
+    .map((n) => escapeHtml(n).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  if (!names.length) return h;
+  const re = new RegExp('@(' + names.join('|') + ')', 'g');
+  return h.replace(re, (mm) => '<span class="mention-chip">' + mm + '</span>');
+}
+function buildMsg(m) {
+  const mine = m.sender === me.user;
+  const mentionedMe = !!(m.mentions && me && m.mentions.includes(me.user));
+  const el = document.createElement('div');
+  el.className = 'm ' + (mine ? 'me' : (m.sender === AGENT ? 'them agentmsg' : 'them')) + (mentionedMe ? ' mentioned' : '');
+  const meta = (!mine ? escapeHtml(m.label) + ' · ' : '') + fmt(m.ts);
+  let html = `<div class="meta">${meta}${mentionedMe ? `<span class="atme-tag">${escapeHtml(t('atme'))}</span>` : ''}</div>`;
+  const a = m.attachment;
+  if (a) {
+    const url = `/_portal/api/chat/file/${m.id}`;
+    if (/^(png|jpe?g|gif|webp|svg)$/i.test(a.ext || '')) {
+      html += `<img class="att-img" src="${url}" alt="" onclick="window.open('${url}')">`;
+    } else {
+      html += `<a class="att-file" href="${url}" target="_blank" download="${escapeHtml(a.name)}">`
+        + `<span class="ic">${iconFor(a.ext)}</span>`
+        + `<span class="finfo"><span class="fn">${escapeHtml(a.name)}</span><span class="fs">${fsize(a.size)}</span></span></a>`;
+    }
+  }
+  if (m.content) html += `<div class="bub">${renderContent(m.content)}</div>`;
+  el.innerHTML = html;
+  return el;
+}
+function appendMsg(m) { document.getElementById('msgs').appendChild(buildMsg(m)); }
+async function uploadFile() {
+  const inp = document.getElementById('file');
+  const f = inp.files && inp.files[0]; if (!f || !scope) { inp.value=''; return; }
+  if (f.size > MAXMB * 1024 * 1024) { alert(t('errFileLarge')); inp.value=''; return; }
+  const fd = new FormData();
+  fd.append('scope', scope);
+  fd.append('content', document.getElementById('inp').value.trim());
+  fd.append('file', f);
+  document.getElementById('inp').value = '';
+  const r = await fetch('/_portal/api/chat/upload', { method: 'POST', body: fd });
+  if (!r.ok) {
+    if (r.status === 401) return sessionGone();
+    const j = await r.json().catch(()=>({})); alert(srvErr(j, 'errUploadFailed'));
+  }
+  inp.value = '';
+  // on success the message arrives back over SSE
+}
+function scrollBottom() { const el = document.getElementById('msgs'); el.scrollTop = el.scrollHeight; }
+async function loadHistory() {  // first load: newest batch
+  const rows = await (await fetch(`/_portal/api/chat/history?scope=${scope}&limit=${PAGE}`)).json();
+  const box = document.getElementById('msgs'); box.innerHTML = '';
+  hasMore = rows.length === PAGE;
+  oldestId = rows.length ? rows[0].id : null;
+  if (!rows.length) { box.innerHTML = `<div class="empty">${escapeHtml(t('empty'))}</div>`; return; }
+  rows.forEach(appendMsg); scrollBottom();
+}
+async function loadOlder() {  // scroll up: load an older batch, prepend, keep scroll position
+  if (!paneReady || loadingOlder || !hasMore || oldestId == null || !scope) return;
+  loadingOlder = true;
+  const box = document.getElementById('msgs');
+  const prevH = box.scrollHeight, prevTop = box.scrollTop;
+  try {
+    const rows = await (await fetch(`/_portal/api/chat/history?scope=${scope}&before=${oldestId}&limit=${PAGE}`)).json();
+    hasMore = rows.length === PAGE;
+    if (rows.length) {
+      oldestId = rows[0].id;
+      const frag = document.createDocumentFragment();
+      rows.forEach((m) => frag.appendChild(buildMsg(m)));
+      box.insertBefore(frag, box.firstChild);
+      box.scrollTop = prevTop + (box.scrollHeight - prevH); // no visual jump
+    }
+  } finally { loadingOlder = false; }
+}
+async function openPanel(s) {
+  scope = s; unread[s] = 0; if (s === 'group') mentionUnread.group = false; renderBadges();
+  paneReady = false;  // no scroll-up loading during the first load
+  showSendErr('');
+  document.getElementById('ptitle').textContent = t(s === 'group' ? 'titleGroup' : 'titlePrivate');
+  document.getElementById('membersBtn').style.display = s === 'group' ? '' : 'none';
+  document.getElementById('membersPop').classList.remove('open');
+  document.getElementById('panel').classList.add('open');
+  await loadHistory();
+  // scroll to bottom after layout, then allow scroll-up loading (avoids a false trigger at scrollTop=0)
+  requestAnimationFrame(() => { scrollBottom(); requestAnimationFrame(() => { scrollBottom(); paneReady = true; }); });
+  document.getElementById('inp').focus();
+}
+function closePanel() { document.getElementById('panel').classList.remove('open'); scope = null; }
+// change password
+function setPwMsg(t, ok) {
+  const el = document.getElementById('pwMsg');
+  el.textContent = t || ''; el.className = 'msg' + (t ? (ok ? ' ok' : ' err') : '');
+}
+function openPwd() {
+  document.getElementById('pwdWho').textContent = t('pwdAccount');
+  document.getElementById('pwCur').value = '';
+  document.getElementById('pwNew').value = '';
+  document.getElementById('pwNew2').value = '';
+  setPwMsg('');
+  document.getElementById('pwdModal').classList.add('open');
+  document.getElementById('pwCur').focus();
+}
+function closePwd() { document.getElementById('pwdModal').classList.remove('open'); }
+async function submitPwd() {
+  const cur = document.getElementById('pwCur').value;
+  const nw = document.getElementById('pwNew').value;
+  const nw2 = document.getElementById('pwNew2').value;
+  if (!cur || !nw) return setPwMsg(t('pwdFill'));
+  if (nw.length < 6) return setPwMsg(t('errPwdShort'));
+  if (nw !== nw2) return setPwMsg(t('pwdMismatch'));
+  if (nw === cur) return setPwMsg(t('errPwdSame'));
+  const btn = document.getElementById('pwSubmit'); btn.disabled = true; setPwMsg('');
+  try {
+    const r = await fetch('/_portal/api/change-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ current: cur, next: nw })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.ok) { setPwMsg(t('pwdOk'), true); setTimeout(closePwd, 1400); }
+    else if (r.status === 401) sessionGone();
+    else setPwMsg(srvErr(j, 'pwdFail'));
+  } catch (e) { setPwMsg(t('netErr')); }
+  finally { btn.disabled = false; }
+}
+document.getElementById('pwdModal').addEventListener('click', closePwd); // click on the backdrop closes (the card stops propagation)
+document.getElementById('pwNew2').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitPwd(); });
+function showSendErr(msg) {
+  const el = document.getElementById('sendErr');
+  el.textContent = msg || ''; el.classList.toggle('show', !!msg);
+}
+async function send() {
+  const inp = document.getElementById('inp');
+  const content = inp.value.trim(); if (!content || !scope) return;
+  inp.value = ''; showSendErr('');
+  let r = null, j = {};
+  try {
+    r = await fetch('/_portal/api/chat/send', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scope, content })
+    });
+    j = await r.json().catch(() => ({}));
+  } catch (e) {/* network down — handled below */}
+  if (r && r.ok) return;              // own messages arrive back over SSE (stays consistent with the server)
+  if (r && r.status === 401) return sessionGone();
+  inp.value = content;                // never discard what the user typed when sending fails
+  showSendErr(r ? srvErr(j, 'sendFail') : t('sendFail'));
+}
+const ROLE_KEY = { approver: 'roleApprover', team: 'roleTeam' };  // agent/client roles show no tag
+function toggleMembers(e) {
+  if (e) e.stopPropagation();
+  const pop = document.getElementById('membersPop');
+  if (pop.classList.toggle('open')) renderMembers();
+}
+function renderMembers(filter) {
+  const pop = document.getElementById('membersPop');
+  const list = roster.filter((a) => a.user !== me.user)
+    .filter((a) => !filter || a.label.includes(filter) || a.user.includes(filter));
+  pop.innerHTML = `<div class="hd">${escapeHtml(t('membersHd'))}</div>` + (list.length ? list.map((a) =>
+    `<div class="mi" onclick="insertMention('${escapeHtml(a.label)}')"><span class="dot"></span>${escapeHtml(a.label)}<span class="r">${escapeHtml(ROLE_KEY[a.role] ? t(ROLE_KEY[a.role]) : '')}</span></div>`
+  ).join('') : `<div class="hd">${escapeHtml(t('membersNone'))}</div>`);
+}
+function insertMention(label) {
+  const inp = document.getElementById('inp');
+  const v = inp.value, m = v.match(/@[^\s@]*$/);
+  inp.value = (m ? v.slice(0, m.index) : (v && !v.endsWith(' ') ? v + ' ' : v)) + '@' + label + ' ';
+  document.getElementById('membersPop').classList.remove('open');
+  inp.focus();
+}
+document.getElementById('inp').addEventListener('input', () => {
+  if (scope !== 'group') return;
+  const m = document.getElementById('inp').value.match(/@([^\s@]*)$/);
+  const pop = document.getElementById('membersPop');
+  if (m) { renderMembers(m[1]); pop.classList.add('open'); } else pop.classList.remove('open');
+});
+document.addEventListener('click', (e) => {
+  const pop = document.getElementById('membersPop');
+  if (pop.classList.contains('open') && !pop.contains(e.target) &&
+      e.target.id !== 'membersBtn' && e.target.id !== 'inp') pop.classList.remove('open');
+});
+document.getElementById('inp').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+document.getElementById('msgs').addEventListener('scroll', () => {
+  if (document.getElementById('msgs').scrollTop < 60) loadOlder();
+});
+boot();
+</script>
+</body>
+</html>

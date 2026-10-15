@@ -1,0 +1,12 @@
+#!/bin/bash
+# Meeting Proxy launcher — opens Terminal running the one-click meeting script.
+# The Terminal window shows live logs; Ctrl+C or closing the window stops the
+# proxy AND restores your audio configuration.
+# The bundle lives in the kit root: <kit>/MeetingProxy.app/Contents/MacOS/MeetingProxy
+RUN="$(cd "$(dirname "$0")/../../.." && pwd)/bin/meeting-run.mac.sh"
+osascript <<EOF
+tell application "Terminal"
+  activate
+  do script "exec '$RUN'"
+end tell
+EOF

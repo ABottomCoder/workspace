@@ -1,0 +1,326 @@
+#!/bin/bash
+# Work items: projects (business/<co>/<project>/DEVDOC.md) and tickets
+# (business/<co>/tickets/<ID>/ or user/work/<slug>/: STATE.md, LOG.md, HANDOFF.md, history/).
+# A session is bound to one work item; the SessionStart hook (`work restore`) re-injects it.
+# Formats and conventions: tools/work/README.md.
+#
+#   work attach <target>                         bind THIS session to a work item
+#   work new-ticket <business|user> <ID> "title" [project]   create a ticket (user -> user/work/<ID>)
+#   work log [<target>] "msg"                    ticket: append to LOG.md; project: DEVDOC change log
+#   work handoff [<target>]                      ticket: archive HANDOFF.md to history/, fresh copy
+#   work show                                    what this session is bound to
+#   work index <business>                        regenerate business/<co>/tickets/INDEX.md
+#   work restore                                 SessionStart hook (reads hook JSON on stdin)
+#
+# <target>: <business>/<project> | <business>/tickets/<ID> | user/work/<slug>  (a leading
+# "business/" is accepted). Omitted <target> = the item this session is bound to.
+set -u
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="${WORK_ROOT:-$(cd "$HERE/../.." && pwd)}"        # WORK_ROOT: tests only
+. "$HERE/../lib/cc-internals.sh"
+BIND="$ROOT/user/sessions/.bindings"
+LOG_LIMIT="${WORK_LOG_LIMIT:-300}"
+die() { echo "work: $*" >&2; exit 1; }
+stamp() { date -u +%Y-%m-%dT%H:%MZ; }
+today() { date +%Y-%m-%d; }
+
+# Resolve a target to its relative path (REL) and kind (KIND = project | ticket).
+resolve() {
+  local t="${1%/}"
+  t="${t#business/}"
+  case "$t" in ""|/*|*..*) die "bad target '$1'";; esac
+  case "$t" in
+    user/work/*)   REL="$t"; KIND=ticket ;;
+    */tickets/*/*) die "bad target '$1'" ;;
+    */tickets/*)   REL="business/$t"; KIND=ticket ;;
+    */*/*)         die "bad target '$1' (use <business>/<project> or <business>/tickets/<ID>)" ;;
+    */*)           REL="business/$t"; KIND=project ;;
+    *)             die "bad target '$1' (use <business>/<project>, <business>/tickets/<ID> or user/work/<slug>)" ;;
+  esac
+  DIR="$ROOT/$REL"
+}
+
+sid() { cc_current_session_id "$(cc_transcript_dir "$ROOT")"; }
+
+bound() {   # print the bound target of this session, or fail
+  local s; s=$(sid) || return 1
+  [ -f "$BIND/$s" ] || return 1
+  sed -n 's/^target=//p' "$BIND/$s" | head -1
+}
+
+target_or_bound() { if [ -n "${1:-}" ]; then resolve "$1"; else local b; b=$(bound) || die "no target given and this session is not attached (work attach <target>)"; resolve "$b"; fi; }
+
+need_ticket() { [ "$KIND" = ticket ] || die "$REL is a project; projects keep state in DEVDOC.md"; [ -f "$DIR/STATE.md" ] || [ -f "$DIR/LOG.md" ] || die "no ticket at $REL (work new-ticket ...)"; }
+
+# Fill a template (templates/ticket/*, templates/project/DEVDOC.md): front-matter keys id, title,
+# project, opened, updated are set; body placeholders <id> <title> <Project> <YYYY-MM-DD> replaced.
+fill() { python3 - "$@" <<'PY2'
+import re, sys
+src, dst, id_, title, project, date = sys.argv[1:7]
+t = open(src, encoding="utf-8").read()
+fm, body = "", t
+if t.startswith("---\n") and t.find("\n---", 4) > 0:
+    e = t.find("\n---", 4); fm, body = t[:e], t[e:]
+    for k, v in {"id": id_, "title": title, "project": project or "none", "opened": date, "updated": date}.items():
+        fm = re.sub(r"(?m)^(%s:)[ \t]*[^#\n]*?([ \t]*#.*)?$" % k, lambda m: m.group(1) + " " + v + (("   " + m.group(2).strip()) if m.group(2) else ""), fm)
+for k, v in {"<id>": id_, "<title>": title, "<Project>": id_, "<YYYY-MM-DD>": date}.items():
+    body = body.replace(k, v)
+open(dst, "w", encoding="utf-8").write(fm + body)
+PY2
+}
+
+handoff_tpl() { cat <<EOF
+# $1 — handoff
+
+Resume point. Refresh at milestones and before stopping: \`work handoff\` archives this file, then
+fill in the fresh copy. Point at LOG.md / reports/ instead of copying them.
+
+- Written: <UTC time>
+- Goal / definition of done:
+- Done so far (verified vs. not):
+- In progress:
+- Waiting on (who / what):
+- Promised to someone (who / what / by when):
+- Next step:
+EOF
+}
+
+state_title() { [ -f "$1/STATE.md" ] && sed -n 's/^title:[[:space:]]*//p' "$1/STATE.md" | head -1; }
+
+write_handoff() {   # $1 dest dir, $2 id, $3 ticket dir (default $1)
+  local tpl="$ROOT/templates/ticket/HANDOFF.md"
+  if [ -f "$tpl" ]; then fill "$tpl" "$1/HANDOFF.md" "$2" "$(state_title "${3:-$1}")" "" "$(today)"; else handoff_tpl "$2" > "$1/HANDOFF.md"; fi
+}
+
+cmd_attach() {
+  [ -n "${1:-}" ] || die "usage: work attach <target>"
+  resolve "$1"
+  local s; s=$(sid) || die "no session id (run from a Claude Code Bash call)"
+  if [ "$KIND" = project ]; then
+    [ -d "$DIR" ] || die "no project dir $REL"
+    if [ ! -f "$DIR/DEVDOC.md" ]; then
+      if [ -f "$ROOT/templates/project/DEVDOC.md" ]; then fill "$ROOT/templates/project/DEVDOC.md" "$DIR/DEVDOC.md" "$(basename "$DIR")" "" "" "$(today)"
+      else printf '# %s — dev doc\n\n## State\n\n## Active work\n\n## TODO\n\n## Change log\n\n## Reference\n' "$(basename "$DIR")" > "$DIR/DEVDOC.md"; fi
+      echo "created $REL/DEVDOC.md"
+      if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" check-ignore -q DEVDOC.md; then
+        echo "note: DEVDOC.md is not gitignored in this repo; add it to $REL/.gitignore" >&2
+      fi
+    fi
+  else
+    [ -d "$DIR" ] || die "no ticket dir $REL (work new-ticket ...)"
+    echo "$(stamp) session ${s:0:8} attached" >> "$DIR/LOG.md"
+  fi
+  mkdir -p "$BIND"; printf 'target=%s\nattached=%s\n' "$REL" "$(stamp)" > "$BIND/$s"
+  local desc; desc=$(basename "$REL" | tr '_ ' '--')
+  echo "attached ${s:0:8} -> $REL"
+  echo "session name convention: ${desc}_<app|None>_<n>  (e.g. ${desc}_None_1; set with /rename)"
+}
+
+cmd_new_ticket() {
+  local b="${1:-}" id="${2:-}" title="${3:-}" project="${4:-}"
+  [ -n "$b" ] && [ -n "$id" ] && [ -n "$title" ] || die "usage: work new-ticket <business> <ID> \"title\" [project]"
+  case "$id" in */*|.*|*" "*) die "ID must not contain '/', spaces or start with '.'";; esac
+  local d rel
+  if [ "$b" = user ]; then rel="user/work/$id"; else
+    [ -d "$ROOT/business/$b" ] || die "no business dir business/$b"; rel="business/$b/tickets/$id"; fi
+  d="$ROOT/$rel"
+  [ -e "$d" ] && die "ticket exists: $rel"
+  mkdir -p "$d/history" "$d/reports" "$d/evidence"
+  local tpl="$ROOT/templates/ticket" f
+  for f in STATE.md LOG.md HANDOFF.md; do
+    [ -f "$tpl/$f" ] && fill "$tpl/$f" "$d/$f" "$id" "$title" "$project" "$(today)"
+  done
+  [ -f "$d/STATE.md" ] || cat > "$d/STATE.md" <<EOF
+---
+id: $id
+title: $title
+status: open            # open | active | review | blocked | closed
+project: ${project:-none}
+opened: $(today)
+updated: $(today)
+closed:
+---
+
+# $id: $title
+
+## Links
+
+## Acceptance criteria
+EOF
+  [ -f "$d/LOG.md" ] || printf '# %s — log\n\nAppend-only, one line per thing a successor must know: what changed, what was\ndecided and why, what was sent to whom, what failed. Not: files read, raw output, thinking.\n\n' "$id" > "$d/LOG.md"
+  [ -f "$d/HANDOFF.md" ] || write_handoff "$d" "$id"
+  echo "$(stamp) created: $title" >> "$d/LOG.md"
+  echo "new ticket: $rel"
+}
+
+# Bump `updated:` in STATE.md front matter (no-op without front matter).
+touch_state() { [ -f "$1/STATE.md" ] && python3 - "$1/STATE.md" "$(today)" <<'PY'
+import re, sys
+p, d = sys.argv[1:3]
+t = open(p, encoding="utf-8").read()
+if t.startswith("---\n"):
+    end = t.find("\n---", 4)
+    if end > 0:
+        fm = t[:end]
+        fm2 = re.sub(r"(?m)^updated:.*$", "updated: " + d, fm) if re.search(r"(?m)^updated:", fm) else fm + "\nupdated: " + d
+        open(p, "w", encoding="utf-8").write(fm2 + t[end:])
+PY
+}
+
+cmd_log() {
+  local t msg
+  if [ $# -ge 2 ]; then t="$1"; msg="$2"; else t=""; msg="${1:-}"; fi
+  [ -n "$msg" ] || die "usage: work log [<target>] \"msg\""
+  target_or_bound "$t"
+  msg=$(printf '%s' "$msg" | tr '\n' ' ')
+  if [ "$KIND" = ticket ]; then
+    need_ticket
+    printf '%s %s\n' "$(stamp)" "$msg" >> "$DIR/LOG.md"
+    touch_state "$DIR"
+    local n; n=$(wc -l < "$DIR/LOG.md" | tr -d ' ')
+    [ "$n" -gt "$LOG_LIMIT" ] && echo "work: LOG.md has $n lines (> $LOG_LIMIT). Move older lines to history/log-<date>.md and leave a digest at the top." >&2
+  else
+    [ -f "$DIR/DEVDOC.md" ] || die "no $REL/DEVDOC.md (work attach creates one)"
+    python3 - "$DIR/DEVDOC.md" "$(today) $msg" <<'PY'
+import re, sys
+p, line = sys.argv[1:3]
+t = open(p, encoding="utf-8").read()
+t = re.sub(r"(?m)^- (<YYYY-MM-DD>|\d{4}-\d{2}-\d{2})[ \t]*\n", "", t)   # empty template bullet
+m = re.search(r"(?mi)^##+\s*(\d+\.\s*)?change ?log.*\n", t)
+if m:   # newest first: right under the heading (after an optional blank line)
+    i = m.end()
+    if t[i:i+1] == "\n": i += 1
+    t = t[:i] + "- " + line + "\n" + ("\n" if t[i:i+1] == "#" else "") + t[i:]
+else:
+    t = t.rstrip("\n") + "\n\n## Change log\n\n- " + line + "\n"
+open(p, "w", encoding="utf-8").write(t)
+PY
+  fi
+  exit 0
+}
+
+cmd_handoff() {
+  target_or_bound "${1:-}"; need_ticket
+  local id; id=$(basename "$DIR")
+  local tmp; tmp=$(mktemp -d); write_handoff "$tmp" "$id" "$DIR"
+  if [ -f "$DIR/HANDOFF.md" ] && ! cmp -s "$DIR/HANDOFF.md" "$tmp/HANDOFF.md"; then
+    mkdir -p "$DIR/history"
+    local a="$DIR/history/handoff-$(date -u +%Y%m%dT%H%M%SZ)" n=""
+    while [ -e "$a$n.md" ]; do n=$(( ${n:-1} + 1 )); done
+    mv "$DIR/HANDOFF.md" "$a$n.md"
+    echo "archived previous handoff into $REL/history/"
+  fi
+  mv "$tmp/HANDOFF.md" "$DIR/HANDOFF.md"; rmdir "$tmp"
+  echo "fill in: $REL/HANDOFF.md"
+}
+
+cmd_show() {
+  local b; b=$(bound) || die "this session is not attached (work attach <target>)"
+  resolve "$b"
+  if [ "$KIND" = ticket ]; then
+    echo "ticket $REL  (LOG.md $(wc -l < "$DIR/LOG.md" 2>/dev/null | tr -d ' ') lines)"
+  else
+    echo "project $REL  (DEVDOC.md $( [ -f "$DIR/DEVDOC.md" ] && echo present || echo missing))"
+  fi
+}
+
+cmd_index() {
+  local b="${1:-}"; [ -n "$b" ] || die "usage: work index <business>"
+  local d="$ROOT/business/$b/tickets"; [ -d "$d" ] || die "no business/$b/tickets"
+  python3 - "$d" <<'PY'
+import os, re, sys, datetime
+d = sys.argv[1]
+KEYS = ("id", "title", "status", "project", "updated")
+rows = []
+for name in sorted(os.listdir(d)):
+    p = os.path.join(d, name, "STATE.md")
+    if not os.path.isfile(p): continue
+    t = open(p, encoding="utf-8", errors="replace").read()
+    f = {}
+    if t.startswith("---\n") and t.find("\n---", 4) > 0:
+        for l in t[4:t.find("\n---", 4)].splitlines():
+            m = re.match(r"\s*([A-Za-z_]+)\s*:\s*(.*?)\s*(#.*)?$", l)
+            if m and m.group(1).lower() in KEYS: f[m.group(1).lower()] = m.group(2)
+    else:   # header lines: "Status: x", "- **Status:** x"
+        for l in t.splitlines()[:40]:
+            m = re.match(r"[\s>*-]*\**([A-Za-z]+)\**\s*:\s*\**\s*(.+?)\s*$", l)
+            if m and m.group(1).lower() in KEYS and m.group(1).lower() not in f: f[m.group(1).lower()] = m.group(2).strip("* ")
+    if "title" not in f:
+        h = re.search(r"(?m)^#\s+(.+)$", t); f["title"] = h.group(1) if h else ""
+    f.setdefault("updated", datetime.date.fromtimestamp(os.path.getmtime(p)).isoformat())
+    f["id"] = name   # the dir name is the ID
+    rows.append(f)
+cell = lambda s: (s or "").replace("|", "/")
+order = {"active": 0, "open": 1, "blocked": 2, "review": 3, "closed": 9}
+rows.sort(key=lambda r: r.get("updated", ""), reverse=True)
+rows.sort(key=lambda r: order.get(r.get("status", "").lower(), 5))
+biz = os.path.basename(os.path.dirname(os.path.abspath(d)))
+out = ["# Tickets — " + biz, "",
+       "> **Generated** by `tools/work/index` — do not edit by hand; edit each ticket's `STATE.md` and regenerate.",
+       "> One directory per ticket: the ticket-system ID (`ABC-18`, `2233`), or a short kebab description if none.", "",
+       "| ID | Title | Status | Project | Updated |", "|---|---|---|---|---|"]
+out += ["| [%s](%s/STATE.md) | %s | %s | %s | %s |" % (cell(r["id"]), r["id"], cell(r.get("title")),
+        cell(r.get("status")), cell("" if r.get("project") == "none" else r.get("project")), cell(r.get("updated"))) for r in rows]
+open(os.path.join(d, "INDEX.md"), "w", encoding="utf-8").write("\n".join(out) + "\n")
+print("wrote tickets/INDEX.md (%d tickets)" % len(rows))
+PY
+}
+
+cmd_restore() {
+  local input s src target
+  input=$(cat)
+  s=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("session_id",""))' 2>/dev/null)
+  src=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("source",""))' 2>/dev/null)
+  target=""; [ -n "$s" ] && [ -f "$BIND/$s" ] && target=$(sed -n 's/^target=//p' "$BIND/$s" | head -1)
+  if [ -z "$target" ] || ! ( resolve "$target" ) >/dev/null 2>&1; then
+    python3 -c 'import json; print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext":
+      "[work] Not attached to a work item. Before real work: route the request (main CLAUDE.md -> Routing), then run `tools/work/work attach <business>/<project> | <business>/tickets/<ID> | user/work/<slug>`."}}))'
+    exit 0
+  fi
+  resolve "$target"
+  python3 - "$ROOT" "$REL" "$KIND" "$src" <<'PY'
+import json, os, sys
+root, rel, kind, src = sys.argv[1:5]
+d = os.path.join(root, rel)
+read = lambda p: open(p, encoding="utf-8", errors="replace").read() if os.path.exists(p) else ""
+BUDGET = 9500                                   # additionalContext is capped at 10,000 chars
+cut = lambda s, n, p: s if len(s) <= n else s[:n] + f"\n…(truncated: read {p})"
+parts = rel.split("/")
+biz = f"business/{parts[1]}/CLAUDE.md" if parts[0] == "business" else None
+head = (f"[work restore on {src or 'session start'}] This session is attached to {kind} {rel}. "
+        "What follows is the work item's own record: trust it over a compacted summary; before saying "
+        "whether something was done, check the log, git or the conversation, never memory alone. "
+        + (f"Business rules: {biz}. " if biz else "")
+        + ("Keep DEVDOC.md current (state, TODO, change log: `tools/work/log \"…\"`).\n\n" if kind == "project"
+           else "Keep logging: `tools/work/log \"…\"`; refresh HANDOFF.md at milestones.\n\n"))
+if kind == "project":
+    if os.path.exists(os.path.join(d, "CLAUDE.md")): head += f"Project knowledge: {rel}/CLAUDE.md.\n\n"
+    body = head + "## DEVDOC.md\n" + cut(read(os.path.join(d, "DEVDOC.md")), BUDGET - len(head) - 20, f"{rel}/DEVDOC.md")
+else:
+    state = cut(read(os.path.join(d, "STATE.md")).strip(), 2500, f"{rel}/STATE.md")
+    handoff = cut(read(os.path.join(d, "HANDOFF.md")).strip(), 3000, f"{rel}/HANDOFF.md")
+    log = read(os.path.join(d, "LOG.md")).rstrip("\n").split("\n")
+    room = BUDGET - len(head) - len(state) - len(handoff) - 200
+    tail, used = [], 0
+    for line in reversed(log):
+        if used + len(line) + 1 > room: break
+        tail.append(line); used += len(line) + 1
+    tail.reverse()
+    skipped = len(log) - len(tail)
+    body = (head + "## STATE.md\n" + state + "\n\n## HANDOFF.md\n" + handoff + f"\n\n## LOG.md (last {len(tail)} lines"
+            + (f"; {skipped} earlier lines in the file" if skipped else "") + ")\n" + "\n".join(tail))
+print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": body[:BUDGET]}}))
+PY
+}
+
+c="${1:-}"; shift || true
+case "$c" in
+  attach) cmd_attach "$@" ;;
+  new-ticket) cmd_new_ticket "$@" ;;
+  log) cmd_log "$@" ;;
+  handoff) cmd_handoff "$@" ;;
+  show) cmd_show ;;
+  index) cmd_index "$@" ;;
+  restore) cmd_restore ;;
+  *) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+esac

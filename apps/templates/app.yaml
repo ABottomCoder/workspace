@@ -1,0 +1,16 @@
+# One app (bot) of one business: business/<co>/apps/<channel>_<name>/app.yaml. Created by `app new`.
+# Never in the framework repo. Credentials: business/<co>/.secrets/apps/<channel>_<name>.env.
+name: <name>
+channel: <channel>    # adapter under apps/channels/<channel>/
+owner:                # chat user id whose messages are instructions (default for `app up --owner`)
+purpose:              # one line: what this app is for
+secrets: local        # local = the .secrets file above · ssm:<prefix> = AWS SSM, keys mapped by ssm_keys
+ssm_keys:             # with ssm: e.g. SLACK_APP_TOKEN=app_token,SLACK_BOT_TOKEN=bot_token
+# What the listener forwards to the session. Empty = everything of that shape.
+listen_types: dm,app_mention,channel_message
+listen_convs:         # conversation ids (empty = every conversation the app is a member of)
+listen_dm_users:      # user ids allowed to DM it (empty = anyone)
+allow_bot_senders:    # peer app/bot ids whose messages pass (empty = ignore all bots; loop safety)
+bot_event_cap: 30     # max peer-bot events per hour (runaway-loop fuse)
+ack_reaction: eyes    # reaction added once the session has a message (empty = off)
+catchup:              # conversation ids re-read after each reconnect (empty = direct conversations)

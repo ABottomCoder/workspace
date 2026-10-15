@@ -1,0 +1,3 @@
+#!/bin/bash
+# Same as `tools/work/work new-ticket ...` (see tools/work/README.md).
+exec bash "$(dirname "$0")/work" new-ticket "$@"

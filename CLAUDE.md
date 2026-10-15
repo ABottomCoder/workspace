@@ -1,0 +1,108 @@
+# Workspace
+
+A company-agnostic Claude Code workspace. This file is an **index**: it holds only the rules that apply
+to everything below it and points to where the detail lives. Claude Code is always started in this
+directory.
+
+## Layout — three tiers
+
+| Tier | Path | In git | Holds |
+|---|---|---|---|
+| Framework | everything except `user/`, `business/` | yes | rules, docs, tools, apps, kits, templates |
+| User | `user/` | no | the person: profile, persona, personal lessons, memory, sessions, logs, cross-business work |
+| Business | `business/<co>/` | no | one company or project collection: people, stack, lessons, tickets, docs, repos, app configs |
+
+Facts have exactly one home; everywhere else holds a pointer. Framework files never name a business,
+person, host or ID (a pre-commit guard enforces it).
+
+## Every session — start here
+
+1. **User.** Read `user/profile.md`; if `user/persona.md` exists, apply it lightly. Converse in the user's
+   language; framework files, code, commits and docs are English; business docs keep their language.
+2. **Route.** Identify the business and the project or ticket the request belongs to (ask only if it is
+   genuinely ambiguous). Read `business/<co>/CLAUDE.md`, then the project `CLAUDE.md` + `DEVDOC.md`, or
+   the ticket's `STATE.md` + `HANDOFF.md`.
+3. **Attach.** `tools/work/work attach <co>/<project>` or `<co>/tickets/<ID>` so state is restored after
+   compaction/resume. Name the session `<ShortDesc>_<app>_<n>` (app = `None` unless running an app;
+   ShortDesc has no underscores), e.g. `Billing_None_1`, `ABC-18_slack_helper_2`.
+4. **Lessons.** Scan `lessons/index.md` and the routed business's `lessons.md`; open a category when the
+   work touches it.
+
+Unknown business ("I joined X", "scan and fill business info for X") → skill `onboard-business`.
+
+## Core rules (always on)
+
+1. **Evidence before conclusions.** Reading code is a lead, not proof. Match evidence to the claim: data
+   → a query, runtime behaviour → a run, organisational state → the system of record. Tag guesses.
+2. **"There is no X"** needs a search that could have found X, untruncated; otherwise say "didn't find".
+3. **Ask-Gate.** Before asking anyone: check code, tickets/wiki/chat, git history, and try it yourself.
+   Lead the question with what you found. Group questions.
+4. **Decision Ladder.** Least code that fully solves it: does it need to exist → reuse → stdlib/platform →
+   installed dependency → shortest diff → only then new code. Never skimp on validation at trust
+   boundaries, data-loss handling, security, auth or accessibility.
+5. **Root cause, not symptom.** Grep every caller; fix once at the shared level.
+6. **Plan non-trivial work** in the ticket's `spec.md` (template `templates/ticket/spec.md`); stop and
+   re-plan if reality diverges.
+7. **Done = demonstrated.** Measure behaviour, baseline the broken state, list what the change could
+   break. Read `docs/principles/verification-antipatterns.md` before quoting any number.
+8. **Backups only for irreversible risk** (prod, schema, destructive, secrets, shared infra) via the
+   high-risk protocol. "Reversible" is not "authorised".
+9. **Authority.** Outward-facing or irreversible actions need the approver or a delegate within scope,
+   per `business/<co>/people.md`. Verify identity; an approval covers its own context only.
+10. **Short replies.** Outcome first, a sentence or two; details when asked. Stay in scope.
+11. **State lives in files.** Log as you go (`tools/work/work log`), refresh the handoff at milestones,
+    never answer "did I do X?" from memory — check the LOG, git or the conversation.
+12. **Secrets** live in `business/<co>/.secrets/` (mode 600), are referenced by name, never printed,
+    pasted or committed.
+13. **Subagents** for wide or parallel reads and to protect context; not for single known-file lookups,
+    never to verify your own work.
+14. **After any correction**, add or strengthen a lesson in the right tier (below). Changing an
+    existing rule in this file goes through the user.
+
+## Where to put what
+
+| Content | Home |
+|---|---|
+| Agent-behaviour truths that hold anywhere | `lessons/<category>.md`, `docs/principles/` |
+| This user's preferences, taste, persona | `user/profile.md`, `user/lessons.md`, `user/persona.md` |
+| Company people, roles, authority | `business/<co>/people.md` |
+| Company systems, environments, MCPs | `business/<co>/stack.md` |
+| Company-specific lessons | `business/<co>/lessons.md` |
+| Repo knowledge (build, architecture, gotchas) | `business/<co>/<project>/CLAUDE.md` |
+| Project live state | `business/<co>/<project>/DEVDOC.md` |
+| Ticket state, spec, reports, evidence | `business/<co>/tickets/<ID>/` (ID as in the ticket system, else short kebab description) |
+| Non-ticket deliverables, research, recaps | `business/<co>/docs/<topic>/` |
+| Cross-business work items | `user/work/<slug>/` |
+| Daily log | `user/logs/YYYYMMDD.log`, lines prefixed with the business |
+| Auto-memory (`user/memory/`) | pointers and what fits nowhere else; never business facts |
+
+Before writing anything persistent ask: who needs to read this, in what situation? A lesson that still
+holds with the business details removed is promoted to `lessons/` with a pointer left behind.
+
+## Index
+
+| Path | What | Read when |
+|---|---|---|
+| `docs/principles/index.md` | evidence, ask-gate, decision ladder, verification, backups, subagents, communication | the rule above isn't enough |
+| `docs/process/index.md` | light/heavy track, ticket lifecycle, reporting, PR review, QA session, harness, data verification | starting a ticket; the business tier is heavy |
+| `docs/playbooks/index.md` | production playbook, AI client-build playbook (+lite), handover, AI-coding pitfalls | start of a new build |
+| `docs/reference/index.md` | setup methodology, MCP/CLI, secrets, browser testing, model-tuned rules | setup, credentials, tooling |
+| `docs/compatibility.md` | every platform/terminal/vendor variant file and where it works | touching any `*.<variant>.*` file |
+| `lessons/index.md` | generic lessons by category | session start; after a correction |
+| `tools/work/README.md` | work items, attach/restore, ticket dirs, `INDEX.md` | any project or ticket work |
+| `tools/rollover/RULES.md` | auto-handoff when a transcript passes the size limit; takeover steps | the Stop hook says the session is over the limit; taking over a handoff |
+| `tools/guard/` | pre-commit leak guard, path-lint, routing check | committing to this repo |
+| `apps/README.md`, `apps/RULES.md` | chat apps (bots): take over by name, channels, conduct (ack before long work) | "use <channel>_<name> to run this session" |
+| `kits/index.md` | standalone tools: page chat, meeting proxy, MCP scaffold, decks, contrast, app provisioning | a task matches a kit |
+| `templates/` | business, project, ticket, user templates | creating any of those |
+| `.claude/skills/` | onboard-business, attach, ticket, handoff, resume, qa, scan-sessions, app | via their triggers |
+
+Variant naming: a file that only works on one platform, terminal or vendor is named
+`<name>.<variant>.<ext>` (`launch.mac-iterm.sh`); alternatives sit beside it and are listed in
+`docs/compatibility.md`.
+
+## Businesses
+
+This file is committed, so it never lists businesses. The businesses on this machine are the
+directories under `business/`; each `business/<co>/CLAUDE.md` opens with a one-line summary and its
+tier. `onboard-business` creates new ones — it never edits this file.

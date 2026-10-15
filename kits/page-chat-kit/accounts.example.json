@@ -1,0 +1,5 @@
+[
+  { "user": "owner",  "password": "changeme6+", "label": "Owner",  "role": "approver" },
+  { "user": "client", "password": "changeme6+", "label": "Client", "role": "client" },
+  { "user": "rin",    "password": "changeme6+", "label": "Rin",    "role": "agent" }
+]

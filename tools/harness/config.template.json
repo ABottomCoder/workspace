@@ -1,0 +1,15 @@
+{
+  "_comment": "Args for tools/harness/orchestrator.workflow.js. Copy to business/<co>/harness.json, fill, pass as Workflow args. Role->model is changed here and nowhere else; every model must be served by your backend. Docs: docs/process/multi-agent-harness.md",
+  "task": "<one-paragraph task description with acceptance criteria>",
+  "repoDir": "<absolute path to the target git repo>",
+  "testCmd": "<command that runs the repo's tests, or leave empty to let the author discover it>",
+  "rolesDir": ".claude/agents",
+  "models": { "author": "opus", "critic": "opus" },
+  "scanner": {
+    "enabled": false,
+    "_note": "Set enabled:true and a command that prints the JSON contract in docs/process/multi-agent-harness.md#static-scanner-interface. {{REPO}} in the command is replaced with repoDir.",
+    "command": "",
+    "timeout_ms": 420000
+  },
+  "maxReworks": 3
+}

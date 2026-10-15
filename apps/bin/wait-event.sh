@@ -1,80 +1,65 @@
 #!/bin/bash
-# Fleet read end: block until the next matching line lands in a bot's listener log,
-# print it, exit. Run it as a `run_in_background: true` Bash task and re-run it after
-# each wake-up.
+# Read end: block until the next matching line lands in an app's listener log, print it, exit.
+# Run it as a `run_in_background: true` Bash task and re-run it after each wake-up. A background
+# task that exits only on a real event is silent while nothing happens (a Monitor would need
+# re-arming and posts into the session on each re-arm).
 #
-# Why not a Monitor: the Monitor tool now expires after 30 min max (no persistent
-# mode), so a Monitor read end has to be re-armed every half hour and every re-arm
-# posts into the session. A background task that exits only on a real event is silent
-# while nothing happens.
+# No gap between wake-ups: the byte offset just past the last delivered line is saved in
+# <runtime>/.wait-offset and the next run resumes from there, so events that land while the
+# session is handling the previous one are delivered on the next run.
 #
-# No gap between wake-ups: the byte offset just past the last delivered line is saved
-# in <botdir>/.wait-offset and the next run resumes from there, so events that land
-# while the session is handling the previous one are delivered on the next run.
+# Recycle catch-up: the guardian recycles the listener every ~12 min and most chat platforms do
+# not replay what arrived while disconnected. So on every `[start]` line this script runs the
+# channel's `read-since --peek` over the app's direct conversations and wakes the session only if
+# someone else wrote in the gap. Conversations = CATCHUP env (space-separated ids), else
+# app.yaml `catchup:`, else `read-since --list-direct`. CATCHUP="" turns it off.
 #
-# Recycle catch-up: the listener drops and reconnects its socket every ~12 min
-# (start.sh ROTATE_SECS) and Socket Mode never replays what arrived in that window.
-# So on every `[start]` line this script runs read-since --peek over the bot's
-# DM conversations and wakes the session only if it found messages from someone else.
-# Conversations = CATCHUP env (space-separated ids) or, by default, every D… id in the
-# bot's .read-cursors.json. CATCHUP="" turns it off.
-#
-# Exit codes — READ THIS, the usual "non-event exit → silently re-run" is WRONG for 3:
+# Exit codes — READ THIS, the usual "non-event exit -> silently re-run" is WRONG for 3:
 #   0  a matching event (or a catch-up batch) was printed. Handle it, then re-run.
 #   1  the tail ended unexpectedly. Re-run silently.
-#   2  no log file for this bot. Re-run silently (or check the write end).
-#   3  THE LISTENER'S HEARTBEAT IS STALE — this bot was NOT receiving Slack events for
-#      the printed number of seconds. Re-running silently is not enough: messages that
-#      arrived in that window are not in the log at all, so the log cannot tell you what
-#      you missed. On a 3, re-run AND run `read-since` over the conversations you care
-#      about, and say one line about it rather than staying quiet. Verified on
-#      2026-09-30: two host-level `ENOTFOUND slack.com` outages, 13 and 14.5 minutes,
-#      all six bots deaf simultaneously, zero `[slack-event]` lines in either window —
-#      a read end that only watches for events sees those as an ordinary quiet night.
+#   2  no log file for this app. Re-run silently (or check the write end).
+#   3  THE LISTENER'S HEARTBEAT IS STALE — the app was NOT receiving for the printed number of
+#      seconds. Messages from that window are not in the log at all. Re-run AND run read-since
+#      over the conversations you care about, and tell the owner in one line. (Seen in practice:
+#      host-level DNS outages of 10-15 min left every app deaf with zero events in the log — a
+#      read end that only watches for events sees that as an ordinary quiet night.)
 #      Tuning: POLL_SECS (read timeout, 90), DEAF_SECS (staleness threshold, 200),
-#      DEAF_BACKOFF (min seconds between two 3s, 60 — this is what stops a permanently
-#      dead listener from becoming a hot respawn loop across the whole fleet).
+#      DEAF_BACKOFF (min seconds between two 3s, 60 — stops a dead listener from becoming a hot
+#      respawn loop across every app on the machine).
 #
-# usage: wait-event.sh <bot> [egrep-pattern]     (default pattern: \[slack-event\])
+# usage: wait-event.sh <co>/<id> [egrep-pattern]   (default pattern: [chat-event], legacy [slack-event])
 set -u
-BOT="${1:?usage: wait-event.sh <bot> [pattern]}"
-PAT="${2:-\[slack-event\]}"
-DIR="${BOTDOCK_HOME:-$HOME/app_bot}/slack/$BOT/.runtime"
-LOG="$DIR/$BOT-listener.log"
+. "$(cd "$(dirname "$0")" && pwd)/lib.sh"
+resolve_app "${1:?usage: wait-event.sh <co>/<id> [pattern]}"
+BOT="$APP_NAME"
+PAT="${2:-^\[(chat|slack)-event\] }"
+DIR="$APP_RUN"
+LOG="$DIR/listener.log"
 STATE="$DIR/.wait-offset"
-WS="$DIR"   # cursors (.read-cursors.json) + .env live in the runtime dir
-BIN="$(cd "$(dirname "$0")" && pwd)"
+READ_SINCE=$(channel_cmd "$APP_CHANNEL" read-since)
+REACT=$(channel_cmd "$APP_CHANNEL" react)   # optional verb
+ensure_node
 if [ -z "${CATCHUP+x}" ]; then
-  CATCHUP=$(python3 -c 'import json,sys; print(" ".join(k for k in json.load(open(sys.argv[1])) if k.startswith("D")))' "$WS/.read-cursors.json" 2>/dev/null)
+  CATCHUP=$(field "$APP_CONF" catchup | tr ',' ' ')
+  [ -n "$CATCHUP" ] || CATCHUP=$( [ -n "$READ_SINCE" ] && cd "$DIR" && $READ_SINCE --list-direct 2>/dev/null | paste -sd' ' -)
 fi
 STALE_SECS="${STALE_SECS:-3600}"   # older offset = previous session; don't replay it
 # --- listener liveness -------------------------------------------------------------
-# The listener writes one `[heartbeat] <ISO>` per minute, so heartbeats already flow
-# through the loop below; a dead listener means NO lines at all and `read` blocks for
-# ever. That silence is indistinguishable from "nobody is talking", which is how six
-# bots went deaf for 13 min on 2026-09-30 with every read end reporting nothing.
+# The listener writes one `[heartbeat] <ISO>` per minute (channel contract), so heartbeats
+# flow through the loop below; a dead listener means NO lines at all and `read` blocks for
+# ever. That silence is indistinguishable from "nobody is talking".
 # So: put a timeout on the read, and when it fires, judge liveness by HEARTBEAT AGE.
 POLL_SECS="${POLL_SECS:-90}"        # heartbeat cadence is 60s; 90s of silence is already odd
 DEAF_SECS="${DEAF_SECS:-200}"       # newest heartbeat older than this = not receiving
-DEAF_BACKOFF="${DEAF_BACKOFF:-60}"  # min seconds between two deaf reports for this bot
+DEAF_BACKOFF="${DEAF_BACKOFF:-60}"  # min seconds between two deaf reports for this app
 DEAF_STATE="$DIR/.wait-deaf"        # when we last reported deafness
 export LC_ALL=C                    # ${#line} must count bytes, not characters
 
 [ -f "$LOG" ] || { echo "[wait-event] no log at $LOG"; exit 2; }
 
-hb_age() {   # prints the newest heartbeat's age in seconds, or nothing if unreadable
-  local hb t
-  hb=$(tail -400 "$LOG" 2>/dev/null | grep '^\[heartbeat\] ' | tail -1 \
-       | sed -E 's/^\[heartbeat\] //; s/\..*$//')
-  [ -n "$hb" ] || return 0
-  t=$(date -u -jf "%Y-%m-%dT%H:%M:%S" "$hb" +%s 2>/dev/null) \
-     || t=$(date -u -d "$hb" +%s 2>/dev/null)
-  [ -n "$t" ] || return 0            # unparsable: say nothing rather than raise a false alarm
-  echo $(( $(date -u +%s) - t ))
-}
-size=$(stat -f %z "$LOG")
+size=$(file_size "$LOG")
 off=$size
-if [ -f "$STATE" ] && [ $(( $(date +%s) - $(stat -f %m "$STATE") )) -lt "$STALE_SECS" ]; then
+if [ -f "$STATE" ] && [ $(( $(date +%s) - $(file_mtime "$STATE") )) -lt "$STALE_SECS" ]; then
   off=$(cat "$STATE")
   [[ "$off" =~ ^[0-9]+$ ]] && [ "$off" -le "$size" ] || off=$size   # garbage or rotated log
 fi
@@ -97,11 +82,11 @@ while :; do
   if [ "$rc" -ne 0 ]; then
     kill -0 "$TAILPID" 2>/dev/null || break    # tail is gone = real EOF -> exit below
     # --- timed out: no line for POLL_SECS. Is the listener alive? ---
-    age=$(hb_age)
+    age=$(hb_age "$LOG")
     [ -n "$age" ] || continue                       # cannot tell -> stay quiet, keep waiting
     [ "$age" -le "$DEAF_SECS" ] && continue         # still beating -> just a quiet stretch
     # Throttle: the caller re-runs us on every non-event exit, so reporting instantly on
-    # each run would turn one dead listener into a hot respawn loop across six bots —
+    # each run would turn one dead listener into a hot respawn loop across every app —
     # worse than the outage. Wait out the backoff first, then re-check: if it recovered
     # during the wait we say nothing at all.
     last=0; [ -f "$DEAF_STATE" ] && last=$(cat "$DEAF_STATE" 2>/dev/null)
@@ -109,11 +94,11 @@ while :; do
     waited=$(( $(date -u +%s) - last ))
     if [ "$waited" -lt "$DEAF_BACKOFF" ]; then
       sleep $(( DEAF_BACKOFF - waited ))
-      age=$(hb_age)
+      age=$(hb_age "$LOG")
       { [ -n "$age" ] && [ "$age" -gt "$DEAF_SECS" ]; } || continue   # recovered: no alarm
     fi
     date -u +%s > "$DEAF_STATE"
-    echo "[wait-event] listener heartbeat is ${age}s old (>${DEAF_SECS}s) — $BOT is probably NOT receiving Slack events"
+    echo "[wait-event] listener heartbeat is ${age}s old (>${DEAF_SECS}s) — $BOT is probably NOT receiving events"
     exit 3
   fi
   # --- a line arrived ---
@@ -123,20 +108,19 @@ while :; do
   if printf '%s\n' "$line" | grep -Eq -- "$PAT"; then
     printf '%s\n' "$line"
     echo "$off" > "$STATE"
-    # Tell the sender we have it (emoji reaction), without delaying the wake-up: detached, best effort.
-    [[ "$line" == "[slack-event]"* ]] && ( cd "$DIR" && printf '%s' "$line" | node "$BIN/react.mjs" >>"$DIR/react.log" 2>&1 & )
+    # Tell the sender the session has it (reaction), without delaying the wake-up: detached, best effort.
+    [ -n "$REACT" ] && ( cd "$DIR" && printf '%s' "$line" | $REACT >>"$DIR/react.log" 2>&1 & )
     exit 0
   fi
-  if [ -n "$CATCHUP" ] && [[ "$line" == "[start]"* ]]; then
+  if [ -n "$CATCHUP" ] && [ -n "$READ_SINCE" ] && [[ "$line" == "[start]"* ]]; then
     sleep 8                          # let the new socket come up first
     found=""
     for ch in $CATCHUP; do
-      # drop the bot's own replies ("bot" = posted via bot token) so they never wake anyone
-      # --peek: never advance the cursor here. The woken session's own read-since
-      # advances it after it has actually seen the messages; advancing here lost a
-      # message when this process was killed between read-since and printf (example,
-      # 2026-09-25, OOM). Worst case now = a replay, which the age stamp makes obvious.
-      out=$(cd "$WS" && node "$BIN/read-since.mjs" "$ch" --peek 2>/dev/null | grep -E '^\[[0-9.]+\]' | grep -viE "^\[[0-9.]+\]( +↳)? (bot|$BOT): ")
+      # drop the app's own replies ("bot" = posted with the app's credentials) so they never wake anyone
+      # --peek: never advance the cursor here. The woken session's own read-since advances it after
+      # it has actually seen the messages; advancing here once lost a message when this process was
+      # killed (OOM) between read-since and printf. Worst case now = a replay, which the age stamp shows.
+      out=$(cd "$DIR" && $READ_SINCE "$ch" --peek 2>/dev/null | grep -E '^\[[0-9.]+\]' | grep -viE "^\[[0-9.]+\]( +↳)? (bot|$BOT): ")
       [ -z "$out" ] && continue
       # Catch-up rows can be weeks old (a cursor that never advanced) yet look exactly like a
       # fresh question, so stamp each row with its UTC time and flag old batches loudly.
@@ -158,7 +142,7 @@ print("\n".join(rows))')
     [ -n "$found" ] && { printf '%s' "$found"; echo "$off" > "$STATE"; exit 0; }
   fi
   echo "$off" > "$STATE"           # nothing to deliver on this line: safe to move past it
-  rm -f "$DEAF_STATE"                # a line arrived: this bot is demonstrably receiving
+  rm -f "$DEAF_STATE"                # a line arrived: this app is demonstrably receiving
 done
 echo "[wait-event] tail of $LOG ended unexpectedly"
 exit 1

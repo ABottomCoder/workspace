@@ -1,0 +1,16 @@
+{
+  "name": "page-chat-kit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reusable page-mounted chat bot: login-gated portal + private/group chat with an agent (1:1 & group, @-mentions, file upload, timestamps, SSE realtime, history paging). Optionally iframes an existing site. Agent side = any session that tails the events log and replies via reply.js / the reply API.",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cookie-session": "^2.1.0",
+    "express": "^4.21.0",
+    "http-proxy": "^1.18.1",
+    "multer": "^2.2.0"
+  }
+}

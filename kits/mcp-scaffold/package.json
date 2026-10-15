@@ -1,0 +1,19 @@
+{
+  "name": "mcp-scaffold",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimal remote (Streamable HTTP) MCP server template with bearer-token auth",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "express": "5.2.1",
+    "zod": "3.25.76"
+  }
+}

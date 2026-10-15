@@ -1,0 +1,11 @@
+{
+  "font": "Arial",
+  "palette": { "accent": "#2563EB", "brand_ink": "#0B1020" },
+  "gradient": ["#14B8A6", "#2563EB", "#7C3AED"],
+  "logo": null,
+  "highlight_terms": ["Q&A", "Questions"],
+  "beat_labels": ["Problem:", "How:", "Result:"],
+  "tags": [{ "pattern": "\\[roadmap\\]", "label": "Roadmap, not shipped", "color": "violet" }],
+  "kickers": { "flow": "How it works" },
+  "replace_em_dash": true
+}
