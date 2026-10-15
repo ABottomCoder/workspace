@@ -2,6 +2,12 @@
 
 What counts as evidence before stating a fact, a diagnosis or a limit, and what to check yourself before asking anyone a question.
 
+### Re-read the task's standing instructions before every stop-and-ask
+**Mistake:** Across about ten sessions the agent stopped to ask permission after being told to keep going without asking, proposed cutting scope after an explicit "replicate everything 1:1", ported only a subset of a full-parity request, and wrote a long reply right after being asked for a short one.
+**Root cause:** The standing instruction was given once, early in the task; by the time a decision point came it had scrolled out of attention (or been compacted), so the agent fell back to its default of checking in or trimming scope.
+**Rule:** Before pausing to ask, proposing to drop or defer anything, or sending a reply, re-read the standing instructions for the current task (the user's opening request, later "always/never/don't ask" lines, the work item's STATE/HANDOFF). If they already answer the question, act on them and say so in one line instead of asking. When a task carries such an instruction, write it into the work item's STATE.md so it survives compaction.
+**Seen:** 10
+
 ### Run the self-service gate before asking anyone anything
 **Mistake:** Questions went to the approver, a lead or a ticket reporter when the answer was already in a code docstring, a values file, a shipped sibling ticket, a one-line console query, or the asker's own earlier work log ("who changed this config?" when it was our own change). Separately, asked "should I research first or proceed?".
 **Root cause:** Questions were written from memory and assumption instead of first searching the sources that would settle them.

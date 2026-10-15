@@ -12,7 +12,7 @@ Entry format: `### <short title>` / **Mistake:** / **Root cause:** / **Rule:** /
 Entries are ordered by Seen.
 
 - [verification](verification.md) (38) — proving a change, fix or claim is true: checks that can fail, real entry points, reading evidence
-- [evidence-and-asking](evidence-and-asking.md) (12) — self-service before asking, hypothesis vs observation, relayed claims, read-only probes
+- [evidence-and-asking](evidence-and-asking.md) (13) — self-service before asking, hypothesis vs observation, relayed claims, read-only probes
 - [engineering](engineering.md) (22) — generic code and framework gotchas (frontend, backend, database, infra code)
 - [tooling-and-environment](tooling-and-environment.md) (25) — shell, processes, schedulers, CLIs, browsers, platform quirks
 - [data-and-production](data-and-production.md) (17) — restarts, migrations, destructive ops, backups, production data and environments
@@ -24,4 +24,4 @@ Entries are ordered by Seen.
 - [context-and-memory](context-and-memory.md) (6) — subagents, knowledge routing, docs vs memory, self-review
 - [secrets-and-safety](secrets-and-safety.md) (6) — credentials handling, publication channels, redaction, privilege
 
-Total: 182 entries.
+Total: 183 entries.
