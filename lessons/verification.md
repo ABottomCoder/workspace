@@ -2,6 +2,12 @@
 
 How to prove a change, fix, measurement or claim is actually true before reporting it: choosing checks that can fail, testing the real path, and reading evidence correctly.
 
+### Before "done", list the paths the change touches and test the unhappy ones
+**Mistake:** Reported features and fixes done after a happy-path self-test; the reviewer or users then hit what was never run: a reload that re-inserted chat messages, the second visit after skip/restore, another tenant's data, a stale connection cache, one exit path of several (billing added on success only), a transient zero in a field assumed final, a long title, a first-display path, a partial test pass after "test the full feature". About 15 such errors over five months.
+**Root cause:** "It worked when I tried it" was taken as "it works"; the set of states and paths was never written down, so only the one the author happened to walk got tested.
+**Rule:** Before saying done, write a short list in the ticket: every entry point, exit path (success, error, early return, cancel), state transition (first time, repeat, reload, resume, after undo), actor (other user, tenant, role) and input edge (empty, long, zero, missing, non-default) the change touches, plus what the change could break nearby. Run each item, or mark it explicitly untested in the report. When the user asked for full testing, the list is the scope and "done" means every item ran.
+**Seen:** 15
+
 ### A negative only covers what the search could see
 **Mistake:** Asserted "there is no such feature", "never version-controlled", "newly introduced", "count is 0" and "the service does nothing on start" after searching one repo or layer, one entry file, a scan that never reached the relevant state, a counter that one path bypassed, a fresh-context harness that cannot see caching bugs, or a grep piped through `head` whose real hits were past the cutoff. All were false.
 **Root cause:** The coverage of the search (repo, layer, state, path, output window) was treated as the full state space, and "my search lacks it" was reported as "it does not exist".
