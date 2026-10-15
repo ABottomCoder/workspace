@@ -9,8 +9,8 @@ die() { echo "app: $*" >&2; exit 1; }
 now() { date -u +%Y-%m-%dT%H:%MZ; }
 
 # --- portability (BSD/macOS vs GNU/Linux) — see docs/compatibility.md ---
-file_size()  { stat -f %z "$1" 2>/dev/null || stat -c %s "$1" 2>/dev/null; }
-file_mtime() { stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null; }
+file_size()  { stat -L -f %z "$1" 2>/dev/null || stat -L -c %s "$1" 2>/dev/null; }   # -L: runtime logs are symlinks
+file_mtime() { stat -L -f %m "$1" 2>/dev/null || stat -L -c %Y "$1" 2>/dev/null; }
 iso_to_epoch() { date -u -jf "%Y-%m-%dT%H:%M:%S" "$1" +%s 2>/dev/null || date -u -d "$1" +%s 2>/dev/null; }
 
 # Flat "key: value" reader (no YAML dependency on purpose).
