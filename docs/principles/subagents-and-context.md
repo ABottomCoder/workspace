@@ -33,6 +33,19 @@ single known-file lookup or anything you can finish in a handful of tool calls.
 - Concrete thresholds (when to compact, how much to delegate) depend on the model's context size:
   [model-tuned-rules.md](../reference/model-tuned-rules.md).
 
+## Structured fan-out: only above the single-context line
+
+Fan out one agent per target (then verification by independent contexts that never saw the work, loop until
+done; the exception `verification-before-done.md` allows for audits) only when one task does
+not fit in one context window: a 50+ file audit, a migration across hundreds of call sites. Below that
+line a single context that reads everything is faster and cheaper. Above it, a single context fails
+in three ways that discipline does not fix: laziness (declares 50 items done after 20), self-preference
+(see `lessons/verification.md` on independent review), and goal drift (an early "don't do X" fades).
+Short, single-purpose contexts fix all three. Fan-out is for read-only exploration and audits or
+isolated writes (worktree, paper, dry run); live orders, pushes and database changes stay manual and
+never enter an autonomous fan-out path, at any scale. Status: a forward pointer, not yet proven by an incident in
+this workspace; promote or revise it when one happens.
+
 ## Tombstones (superseded rules, kept so the reversal stays visible)
 
 - ~~"Use subagents aggressively; offload research, polling, code reading and drafting."~~ Correct when

@@ -103,3 +103,9 @@ Lessons about touching live systems and real data: restarts, deploy verification
 **Root cause:** Optimized for convenience over what the environment is for; staging being production-backed is exactly why it must not diverge.
 **Rule:** Learn the team's environment semantics before proposing where a switch goes. Gate test-only behavior on an explicit allowlist of environments, never `env != "prod"`. If verification is hard in the intended environment, report that as a finding; any exception is the leads' documented decision.
 **Seen:** 1
+
+### Before an irreversible action, re-read live state and in-flight operations
+**Mistake:** A close order was sent for a position that had already been closed, and the duplicate opened an inverted position; the state it acted on was cached, and a working order on the same instrument was not checked.
+**Root cause:** Acted on assumed or cached state; did not look for operations already in flight on the same target.
+**Rule:** Before any order, payment, deletion or other real-world action (automated or manual): fetch the current state from the system of record, not a cache, and list pending or working operations on the same target. If either differs from what you assumed, stop and re-plan. Build the check into code paths that act, not only into habits.
+**Seen:** 1

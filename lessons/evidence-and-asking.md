@@ -79,3 +79,21 @@ What counts as evidence before stating a fact, a diagnosis or a limit, and what 
 **Root cause:** The tempting move was to resolve the conflict by hand and push on.
 **Rule:** When something conflicts, errors or fails to reproduce, spend one step asking why before routing around it.
 **Seen:** 1
+
+### On pushback, verify the claim first; revert what was built on wrong analysis
+**Mistake:** When the user questioned a change, defended it with the original reasoning; after the reasoning proved wrong, proposed keeping the change "as a general improvement".
+**Root cause:** Defending one's own output (self-preference) instead of re-checking facts; reluctance to revert.
+**Rule:** When someone disputes a change or claim, check it against facts (query, log, re-read) before replying. If they are right, say so plainly and revert changes based on the wrong analysis. A change survives only if it can be re-justified from scratch.
+**Seen:** 1
+
+### Model training knowledge of a live API is a hint, not a spec
+**Mistake:** Built requests to an actively evolving platform API from remembered field names and headers; the live API had changed and rejected them.
+**Root cause:** Treated training data as current documentation.
+**Rule:** For third-party API details (fields, headers, versions, limits), check the official live docs or the vendor's MCP/SDK before shipping, and build such headers in one place so a fix lands once.
+**Seen:** 1
+
+### When the user's "mistake" mirrors a document you wrote, suspect the document
+**Mistake:** Graded a user's answer as self-contradictory against a framework doc a previous session had written; the doc's own definition mixed two axes, and the user had answered exactly as the doc implied.
+**Root cause:** Took own (prior-session) output as ground truth; output was produced faster than it was verified.
+**Rule:** Before judging someone against a document you or an earlier session produced, check that its definitions are self-consistent and match the grading criterion. If their error has the same shape as the doc's wording, fix the doc first.
+**Seen:** 1

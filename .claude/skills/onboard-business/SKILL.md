@@ -87,7 +87,8 @@ For each repo confirmed (or clearly) the team's:
 
 - `people.md`: members (role, modules owned from CODEOWNERS / commit history, chat ID), channels,
   authority (approver + delegations exactly as the user stated them; never inferred).
-- `stack.md`: every system found, with access method and secret *names*; the repo table.
+- `stack.md`: every system found, with access method and secret *names*; the repo table; the project state
+  policy (ask whether a personal orphan branch on the company remote is allowed; default local).
 - `CLAUDE.md`: tier, working language, onboarded/refresh dates, project table, `[PENDING]` list.
 - Leave `lessons.md`, `tickets/INDEX.md`, `docs/`, `apps/` as templates unless there is content.
 

@@ -15,6 +15,7 @@
 - **Auth:** <SSH key alias / CLI login / `.secrets/<token-file>`>
 - **Branching model:** <Git Flow / trunk-based> · **Default base branch:** <main/develop>
 - **Branch convention:** <ABC-{id}-description> · **PR convention:** <ABC-{id} description>
+- **Project state policy:** <in-repo `docs/HANDOFF.md` | orphan branch `state/<user>` | local `DEVDOC.md`> (`tools/work/README.md` → Project state policy; orphan branch only if the company allows personal branches)
 - **Merge methods:** <feature → develop squash; release → main merge commit>
 - Per-repo deviations: in the repo table below and that project's `CLAUDE.md`.
 

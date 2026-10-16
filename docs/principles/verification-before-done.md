@@ -16,6 +16,20 @@ Before declaring done, **list what the change could break**: shared state it tou
 inside, the neighbouring code path, and every safety property you asserted in a comment but never
 executed. Then cover those.
 
+## Code that drives external systems
+
+Code that talks to a broker, database, scheduler or event loop is validated in its real runtime before commit:
+a dry run against the real external system (paper account, dev database) or the actual code path in the actual
+context (worker thread, async loop). Unit tests cannot see a missing event loop in a worker thread.
+
+## Independent review for audits
+
+Self-verification of a change stays in the main loop (above). Reviewing documents, batch output or an
+important conclusion is different: it goes to a separate session that has not seen the reasoning
+(a subagent spawned with your framing is not independent). The author checks every finding against
+facts, never adopting it because a model said so, and replies accept or reject with a reason. Parallel
+sessions in one repo each stage only their own files.
+
 ## What counts as "it works"
 
 - **Measured behaviour, not a success signal.** "It builds", "the bundle hash changed", "it deployed",

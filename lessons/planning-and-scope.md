@@ -8,6 +8,12 @@ Sizing, sequencing and bounding work: estimates, plans, what is in and out of sc
 **Rule:** Every estimate cites a calibration anchor from past work, using active build time from commit timestamps, in hours, with realistic values plus one explicit reserve line and external waits (feedback, keys, approvals) listed separately. Before sizing: (1) subtract complexity sibling tickets already carry; (2) grade each AC as engineering work vs a confirmation, one-line config or decision; (3) establish who owns the system and who writes the code (a ticket on another team's platform is often a thin validation shell); (4) if a load-bearing fact is unverified, give a range ("1 if CI exists, 3 if greenfield") and raise it as the first refinement question.
 **Seen:** 2
 
+### Priority labels need an action; advice that could be structure must be proposed as structure
+**Mistake:** Priority data (stars, frequencies, tiers) sat in a study document for weeks before anyone turned it into a minimal-coverage plan; separately, verbal advice ("walk through each failure case after every design") was given but never proposed as a document step, and the user added it the next day.
+**Root cause:** Initiative stopped at the content layer (fixing errors, answering) and left the shape of the material or process to the user.
+**Rule:** Any priority label you produce comes with the action it implies. Any advice you give that could be fixed as structure (a checklist, a document step, a mechanism) must be proposed as that structure. The proposal can be declined; it cannot be skipped.
+**Seen:** 2
+
 ### The named deliverable sets the scope; coupling does not widen it
 **Mistake:** The brief was one new output. In one evening a second ticket was opened for half of it, a neighbouring ticket was explored deeply because shared code made it look coupled, and "don't touch the original output" had to be said three times.
 **Root cause:** Sized the work by the codebase's coupling instead of the deliverable the user named.
@@ -60,4 +66,10 @@ Sizing, sequencing and bounding work: estimates, plans, what is in and out of sc
 **Mistake:** Added a pointer in the always-loaded agent instructions to a draft process doc whose process and tooling were still undecided; the lead asked to revert it.
 **Root cause:** Treated "draft written" as "adopted".
 **Rule:** Draft process docs stay unreferenced until the owner confirms the process and its prerequisites exist; only then add the pointer.
+**Seen:** 1
+
+### Enumerate every binding constraint before computing a worst case
+**Mistake:** Computed a "worst-case daily loss" by summing per-item budgets; the result broke four explicit limits in the code (per-scan, total positions, margin, per-day caps) and was several times the worst drawdown in a stress-year history.
+**Root cause:** Did arithmetic on one constraint before collecting all of them.
+**Rule:** For any bounding question (max loss, max exposure, peak load), open every place limits are defined, list them in a table, identify which one binds, compute respecting all simultaneously, then sanity-check against empirical history; a large gap means the computation is wrong.
 **Seen:** 1

@@ -4,11 +4,35 @@ One tool for the two kinds of work (spec §3.3). Run `tools/work/work` with no a
 
 | Kind | Where | Files |
 |---|---|---|
-| Project (long-lived) | `business/<co>/<project>/` | `DEVDOC.md` (gitignored in the project repo) |
+| Project (long-lived) | `business/<co>/<project>/` | one state file, per the business's state policy (below) |
 | Ticket (finite) | `business/<co>/tickets/<ID>/` | `STATE.md`, `LOG.md`, `HANDOFF.md`, `history/`, `reports/`, `evidence/` |
 | Cross-business item | `user/work/<slug>/` | same as a ticket |
 
 `<ID>` is the ticket-system ID as written (`ABC-18`, `2233`), else a short kebab description.
+
+## Project state policy
+
+Live state (current state, active work, TODO, change log) lives in exactly one file per project. The tool
+uses the first that exists: `DEVDOC.md` → `.state/DEVDOC.md` → `docs/HANDOFF.md`. With none, `attach` follows the
+business policy line in `stack.md`: in-repo → creates `docs/HANDOFF.md`; orphan branch → stops with setup steps;
+unset → creates `DEVDOC.md`. `work log` writes under `## Change log`, creating it right after the H1 if missing
+(restore injects the head of the file, so the log must sit near the top). Each business records its policy in `stack.md` → VCS:
+
+| Policy | File | When |
+|---|---|---|
+| in-repo | `docs/HANDOFF.md`, committed and pushed | personal repos: state should follow the code everywhere |
+| orphan branch | `.state/DEVDOC.md` = a worktree of an orphan branch (e.g. `state/<user>`), pushed to the same remote, never merged | company repos that allow personal branches: state backed up remotely, kept out of dev/main |
+| local | `DEVDOC.md`, gitignored | company repos that do not allow it; lost with the machine |
+
+Orphan branch setup (once per repo; `.state/` is excluded locally, the main branch's `.gitignore` is untouched):
+
+```bash
+git -C <repo> worktree add --orphan -b state/<user> .state     # git >= 2.42; older: git switch --orphan in a temp clone
+echo ".state/" >> <repo>/.git/info/exclude
+# commit and push from <repo>/.state; never merge state/<user> into another branch
+```
+
+Confirm the company allows a personal branch on its remote before choosing it (onboarding asks).
 
 ## Session binding
 
@@ -25,7 +49,7 @@ else the newest transcript in the main dir's transcript dir (with a warning). Ro
 binding to the new session.
 
 `work restore` is the SessionStart hook (`startup|resume|compact|clear`). Bound to a project: injects
-`DEVDOC.md`. Bound to a ticket: `STATE.md` (≤ 2.5 KB) + `HANDOFF.md` (≤ 3 KB) + as much of the
+its state file. Bound to a ticket: `STATE.md` (≤ 2.5 KB) + `HANDOFF.md` (≤ 3 KB) + as much of the
 `LOG.md` tail as fits. Total ≤ 9.5 KB (the hook output cap is 10 KB). Unbound: a one-line routing
 reminder only.
 

@@ -37,3 +37,9 @@ Where knowledge is stored, how docs and memory are kept accurate, and how to spe
 **Root cause:** Self-review was left to an optional manual marker instead of a default practice.
 **Rule:** Periodically review past conversations as a detached third-party reviewer to find your own errors. Hold the evidence bar high: count only confirmed errors (an explicit fix marker, the user pointing out a mistake, or your own explicit admission) and label inferred ones as inferred.
 **Seen:** 1
+
+### Rules earn their place with a dated real incident; recurrence promotes a lesson
+**Mistake:** Rule sets grew with speculative rules that had no incident behind them, diluting the ones that did.
+**Root cause:** Writing rules from imagination instead of from paid costs.
+**Rule:** A new rule must trace to a real correction or incident. In business and user rule sets, write it with the date and a concrete artifact (file, commit, symptom); the generic framework entry carries that weight through **Seen** and leaves the dated record in the business file. Half-formed lessons go to a holding area first; one that recurs (twice is a pattern) or proves load-bearing is promoted. In business and user rule sets, rules with no incident behind them are removed.
+**Seen:** 1

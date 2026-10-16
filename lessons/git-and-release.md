@@ -67,3 +67,15 @@ Lessons about branching, pull requests, review, merging, and getting the right c
 **Root cause:** Treated the workflow order as optional and "update reports" as a single action.
 **Rule:** Order: implement, test, self-review, commit, update reports, push. After each change round, list every deliverable that must change and update each explicitly.
 **Seen:** 1
+
+### Automated output that flips a strategic flag needs its own confirmation
+**Mistake:** An optimizer re-run changed a risk flag from "off" (set deliberately months earlier) back to a numeric value; the commit listed only the tuned values, and the flip rode through several releases until someone asked where it came from.
+**Root cause:** Optimizer, search and batch-refactor output mixes values with design decisions; the tool does not know why a flag was set.
+**Rule:** Separate values (thresholds, sizes: apply as optimized) from strategic flags (on/off switches, stop-loss modes, skipped legs, enabled slots). When automated output flips a strategic flag relative to its previous value, stop, tell the user it reverses an earlier design decision, and get confirmation before committing.
+**Seen:** 1
+
+### Commit messages state flips, production-affecting changes and why
+**Mistake:** A commit message described only the routine part of a change; the load-bearing part (a strategic flag flip) was invisible in history.
+**Root cause:** Kept the message short at the cost of the information a later reader needs.
+**Rule:** Every commit message names any strategic-flag flip, any production-affecting behaviour change, and the user-visible problem it addresses. Long bodies are fine; omitting load-bearing facts is not. Code committed before real-runtime validation says "UNVERIFIED + how to verify" in the body.
+**Seen:** 1

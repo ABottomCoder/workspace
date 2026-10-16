@@ -5,8 +5,8 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 ### Send message text from a file, never as a quoted shell argument, and read it back
 **Mistake:** Messages passed to a CLI as double-quoted arguments lost inline code spans to backtick and `$()` command substitution (once deleting the key name from a safety warning); a single-quoted long message was cut off at the first apostrophe and the rest ran as shell commands. Every time, the tool reported "sent".
 **Root cause:** Double quotes still expand backticks and `$`, single quotes break on ordinary apostrophes, and a remembered rule gave no trigger at send time, so deciding per message whether to "bother" failed repeatedly.
-**Rule:** Unconditionally, even for one-liners: write the text with a quoted heredoc (`cat > f <<'EOF'`) and pass it via `--file`, stdin, `"$(cat f)"`, or an `execFile`-style call that skips shell parsing. After sending, read the delivered message back and check length, tail and code spans for missing text. "Sent" and "intact" are different facts.
-**Seen:** 8
+**Rule:** Unconditionally, even for one-liners: write the text with a quoted heredoc (`cat > f <<'EOF'`) and pass it via `--file`, stdin, `"$(cat f)"`, or an `execFile`-style call that skips shell parsing. After sending, read the delivered message back and check length, tail and code spans for missing text. "Sent" and "intact" are different facts. Windows PowerShell 5.1 also mangles embedded double quotes in arguments to native executables, even in here-strings: commit messages go through `git commit -F <file>`.
+**Seen:** 9
 
 ### Stop processes by known PID or process group, never by a generic command-line pattern
 **Mistake:** `pkill -f` / `pgrep -f` loops killed the agent's own remote shell, supervisor wrapper shells, and the identically named services of other projects that shared an `apps/<x>/src/main.ts` layout; a duplicate-run guard kept reporting "already running" because the operator's monitoring command contained the pattern. Separately, killing only a launcher shell left its child alive, holding an exclusive device, so the user's first real run failed.
@@ -64,6 +64,18 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 **Mistake:** Per-instance task config (listen settings, owner, prompts) was committed into a shared tooling repo, and a plugin meant to be shareable was written with one machine's paths; a suggested restart command would have discarded the running session.
 **Root cause:** Treated one instance as a fixed identity, never tested from a second location, and did not check a command's side effects before suggesting it.
 **Rule:** Commit to shared tooling only what holds for every user and task; per-user settings, contacts and history stay local. Ask "would a colleague using this for a different task want this?" Verify anything labelled portable from a second path or machine. Before suggesting a command, state side effects, especially ones that end the session or discard state.
+**Seen:** 2
+
+### Windows: non-UTF-8 console code pages crash scripts that print non-ASCII
+**Mistake:** CLI scripts printing Chinese, emoji or box-drawing characters died with `UnicodeEncodeError` on a GBK console; `conda run` re-encoded output the same way.
+**Root cause:** Python's stdout follows the console code page on Windows.
+**Rule:** At the top of Windows CLI scripts: `sys.stdout.reconfigure(encoding="utf-8", errors="replace")` (and stderr); with rich, `Console(legacy_windows=False)`; or run with `PYTHONIOENCODING=utf-8` / `-X utf8`. Call the environment's interpreter by absolute path instead of `conda run`.
+**Seen:** 2
+
+### Windows: asyncio subprocesses need the Proactor loop (uvicorn `--reload` defeats it), and killed servers leave children holding the port
+**Mistake:** Playwright (subprocess-based) inside a uvicorn app failed with `NotImplementedError`; setting `WindowsProactorEventLoopPolicy` in app code had no effect under `--reload`.
+**Root cause:** Subprocesses need the Proactor loop on Windows; the reloader starts the server in a child process whose loop is created before user code runs.
+**Rule:** On Windows, for apps that spawn subprocesses from asyncio, set the Proactor policy in the launcher before uvicorn starts and run without `--reload` (or launch via a script that sets the policy first). After killing such a server, check the port's owner (`Get-NetTCPConnection -LocalPort <port>`): `multiprocessing.spawn` children can survive and keep the port.
 **Seen:** 2
 
 ### Copy existing alert commands; do not rewrite filters from memory
@@ -154,4 +166,22 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 **Mistake:** An audio test passed falsely: the conferencing app read only the first sub-device of an aggregate device, and the meter moved while no sound came out.
 **Root cause:** Conferencing apps do not fully read aggregate devices, and a virtual device's own volume slider or a muted output silently attenuates audio.
 **Rule:** Point the app straight at the virtual device and bridge other inputs into it. Force virtual-device volume and unmute in the launcher and restore previous settings on exit. Verify at the receiving app, not an intermediate tool.
+**Seen:** 1
+
+### Windows: move directories atomically, and check both sides after any failed move
+**Mistake:** PowerShell `Move-Item` on a large directory failed the whole-directory rename (another process held a handle), silently fell back to moving children one by one, and stopped mid-way with an error; the agent read the error as "nothing moved", one repository ended up split across both locations, and the agent then credited the partial move to the user because of a suggested-reply button it had itself written.
+**Root cause:** `Move-Item` is not atomic for directories; the destination was checked only before the move; agent-written button text was treated as evidence of what the user did.
+**Rule:** Move directories with an atomic rename (`[System.IO.Directory]::Move`, Python `os.rename`): all or nothing. After any failed move or delete, inspect source and destination before concluding anything. To finish a split move, rename entry by entry, recurse where both sides have a directory, and report (never overwrite) files present on both sides; then `git fsck` and count files. A process whose working directory is inside the tree (including the agent's own MCP servers and terminal tabs) blocks the rename: fully quit the app (tray → Quit; closing the window is not quitting). Text you wrote for the user to click is not evidence they acted; ask or check.
+**Seen:** 1
+
+### Windows: Git Bash `ln -s` copies; use a junction
+**Mistake:** A setup script linked a directory with `ln -s` under Git Bash; without Developer Mode it silently created a copy, so later writes went to the original location.
+**Root cause:** MSYS `ln -s` falls back to copying when native symlinks are not permitted.
+**Rule:** On Windows link directories with `cmd /c mklink /J <link> <target>` (no admin needed, works across local drives, transparent to Node and Python). After creating any link, confirm it is a link (`Get-Item <path> | Select LinkType`).
+**Seen:** 1
+
+### Windows: `/tmp` means different places to Git Bash and to native executables
+**Mistake:** A bash step wrote `/tmp/x` and a native Windows `python.exe` step could not find it (or read a different file).
+**Root cause:** MSYS translates `/tmp` to its own temp dir; native programs receive the path untranslated or resolve it elsewhere.
+**Rule:** Pass files between bash and native Windows programs through project-relative paths or Windows-form absolute paths (`cygpath -w`), never `/tmp`.
 **Seen:** 1

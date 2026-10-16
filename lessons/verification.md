@@ -92,6 +92,12 @@ How to prove a change, fix, measurement or claim is actually true before reporti
 **Rule:** A round number in a statistic slot: check config for a matching cap first. Anything through limit/pagination/tail is "first N". For earliest/latest/count, query `min()/max()/count()` on the full data. Label on-screen numbers as cap vs total. Fetch boundary values and totals yourself.
 **Seen:** 3
 
+### Try to refute a root-cause claim before acting; audits go to an independent session
+**Mistake:** Acted on own root-cause claims that a skeptic with the data would have refuted (a "buggy" order path that was fine; a rewrite declared done on unit tests that failed in the real event-loop thread). A document audited four times by its author still had 83 valid findings for an independent reviewer.
+**Root cause:** Self-preference: the author shares the blind spot of the change and cannot see it from inside the same context.
+**Rule:** Before acting on a claim that drives a change with real side effects, try to refute it with facts (logs, data, reproduction, the real runtime), defaulting to "refuted" under uncertainty; act only if the claim survives. The fix is structural, not "try harder": the author shares the change's blind spot, so for high-stakes side-effect claims (orders, data, schedulers) hand the refutation to a context that has not seen your reasoning. Audits of documents, batch output and important conclusions go to a separate session that has not seen the reasoning; the author then checks every finding independently and replies accept or reject with a reason. If you cannot run the refutation (no data, wrong runtime), say so and ask.
+**Seen:** 3
+
 ### Gate on the exact command CI runs; a green build is not verification
 **Mistake:** A frontend fix was declared done because the bundler build passed while a handler referenced an out-of-scope identifier; the same trap later broke CI.
 **Root cause:** Some bundlers (e.g. Vite) strip types without checking them; knowing the caveat did not change the habit.

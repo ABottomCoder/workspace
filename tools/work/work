@@ -1,12 +1,12 @@
 #!/bin/bash
-# Work items: projects (business/<co>/<project>/DEVDOC.md) and tickets
+# Work items: projects (business/<co>/<project>/DEVDOC.md | .state/DEVDOC.md | docs/HANDOFF.md) and tickets
 # (business/<co>/tickets/<ID>/ or user/work/<slug>/: STATE.md, LOG.md, HANDOFF.md, history/).
 # A session is bound to one work item; the SessionStart hook (`work restore`) re-injects it.
 # Formats and conventions: tools/work/README.md.
 #
 #   work attach <target>                         bind THIS session to a work item
 #   work new-ticket <business|user> <ID> "title" [project]   create a ticket (user -> user/work/<ID>)
-#   work log [<target>] "msg"                    ticket: append to LOG.md; project: DEVDOC change log
+#   work log [<target>] "msg"                    ticket: append to LOG.md; project: state-file change log
 #   work handoff [<target>]                      ticket: archive HANDOFF.md to history/, fresh copy
 #   work show                                    what this session is bound to
 #   work index <business>                        regenerate business/<co>/tickets/INDEX.md
@@ -50,7 +50,12 @@ bound() {   # print the bound target of this session, or fail
 
 target_or_bound() { if [ -n "${1:-}" ]; then resolve "$1"; else local b; b=$(bound) || die "no target given and this session is not attached (work attach <target>)"; resolve "$b"; fi; }
 
-need_ticket() { [ "$KIND" = ticket ] || die "$REL is a project; projects keep state in DEVDOC.md"; [ -f "$DIR/STATE.md" ] || [ -f "$DIR/LOG.md" ] || die "no ticket at $REL (work new-ticket ...)"; }
+# Project live-state file, first that exists: DEVDOC.md (local, gitignored), .state/DEVDOC.md (orphan-branch
+# worktree, for repos whose state must not reach main), docs/HANDOFF.md (committed, personal repos).
+STATE_FILES="DEVDOC.md .state/DEVDOC.md docs/HANDOFF.md"
+state_file() { local f; for f in $STATE_FILES; do [ -f "$1/$f" ] && { echo "$f"; return 0; }; done; return 1; }
+
+need_ticket() { [ "$KIND" = ticket ] || die "$REL is a project; projects keep state in $(state_file "$DIR" || echo DEVDOC.md)"; [ -f "$DIR/STATE.md" ] || [ -f "$DIR/LOG.md" ] || die "no ticket at $REL (work new-ticket ...)"; }
 
 # Fill a template (templates/ticket/*, templates/project/DEVDOC.md): front-matter keys id, title,
 # project, opened, updated are set; body placeholders <id> <title> <Project> <YYYY-MM-DD> replaced.
@@ -98,7 +103,17 @@ cmd_attach() {
   local s; s=$(sid) || die "no session id (run from a Claude Code Bash call)"
   if [ "$KIND" = project ]; then
     [ -d "$DIR" ] || die "no project dir $REL"
-    if [ ! -f "$DIR/DEVDOC.md" ]; then
+    local pol=""; pol=$(grep -m1 -i 'project state policy' "$ROOT/business/$(echo "$REL" | cut -d/ -f2)/stack.md" 2>/dev/null)
+    case "$pol" in *"|"*) pol="" ;; esac   # template line lists the options: no policy chosen yet
+    if ! state_file "$DIR" >/dev/null && [ -n "$pol" ] && printf '%s' "$pol" | grep -q 'docs/HANDOFF.md'; then
+      mkdir -p "$DIR/docs"
+      printf '# %s — handoff\n\n## Current state\n\n## Change log\n\n## Session log (newest first)\n' "$(basename "$DIR")" > "$DIR/docs/HANDOFF.md"
+      echo "created $REL/docs/HANDOFF.md (business state policy: in-repo)"
+    elif ! state_file "$DIR" >/dev/null && printf '%s' "$pol" | grep -qi 'orphan'; then
+      local prev; prev=$(bound 2>/dev/null) || prev="nothing"
+      die "business state policy is orphan branch: set up $REL/.state first (tools/work/README.md -> Project state policy); still attached to $prev"
+    fi
+    if ! state_file "$DIR" >/dev/null; then
       if [ -f "$ROOT/templates/project/DEVDOC.md" ]; then fill "$ROOT/templates/project/DEVDOC.md" "$DIR/DEVDOC.md" "$(basename "$DIR")" "" "" "$(today)"
       else printf '# %s — dev doc\n\n## State\n\n## Active work\n\n## TODO\n\n## Change log\n\n## Reference\n' "$(basename "$DIR")" > "$DIR/DEVDOC.md"; fi
       echo "created $REL/DEVDOC.md"
@@ -180,19 +195,31 @@ cmd_log() {
     local n; n=$(wc -l < "$DIR/LOG.md" | tr -d ' ')
     [ "$n" -gt "$LOG_LIMIT" ] && echo "work: LOG.md has $n lines (> $LOG_LIMIT). Move older lines to history/log-<date>.md and leave a digest at the top." >&2
   else
-    [ -f "$DIR/DEVDOC.md" ] || die "no $REL/DEVDOC.md (work attach creates one)"
-    python3 - "$DIR/DEVDOC.md" "$(today) $msg" <<'PY'
+    local sf; sf=$(state_file "$DIR") || die "no state file in $REL ($STATE_FILES; work attach creates DEVDOC.md)"
+    python3 - "$DIR/$sf" "$(today) $msg" <<'PY'
 import re, sys
 p, line = sys.argv[1:3]
 t = open(p, encoding="utf-8").read()
-t = re.sub(r"(?m)^- (<YYYY-MM-DD>|\d{4}-\d{2}-\d{2})[ \t]*\n", "", t)   # empty template bullet
 m = re.search(r"(?mi)^##+\s*(\d+\.\s*)?change ?log.*\n", t)
 if m:   # newest first: right under the heading (after an optional blank line)
     i = m.end()
+    nxt = re.search(r"(?m)^#", t[i:])
+    end = i + nxt.start() if nxt else len(t)
+    # drop the empty template bullet ("- <YYYY-MM-DD>" or a bare "- <date>"), only inside this section
+    sec = re.sub(r"(?m)^- (<YYYY-MM-DD>|\d{4}-\d{2}-\d{2})[ \t]*\n", "", t[i:end])
+    t = t[:i] + sec + t[end:]
     if t[i:i+1] == "\n": i += 1
     t = t[:i] + "- " + line + "\n" + ("\n" if t[i:i+1] == "#" else "") + t[i:]
-else:
-    t = t.rstrip("\n") + "\n\n## Change log\n\n- " + line + "\n"
+else:   # new section near the top (after the H1) so restore's head-first budget keeps it
+    i, fence, pos = 0, False, 0   # after the first H1 outside code fences, else after front matter
+    if t.startswith("---\n") and t.find("\n---", 4) > 0:
+        e = t.find("\n", t.find("\n---", 4) + 1)
+        i = e + 1 if e >= 0 else len(t)
+    for ln in t.splitlines(True):
+        if ln.lstrip().startswith("```"): fence = not fence
+        elif not fence and ln.startswith("# "): i = pos + len(ln); break
+        pos += len(ln)
+    t = t[:i] + "\n## Change log\n\n- " + line + "\n" + t[i:]
 open(p, "w", encoding="utf-8").write(t)
 PY
   fi
@@ -220,7 +247,7 @@ cmd_show() {
   if [ "$KIND" = ticket ]; then
     echo "ticket $REL  (LOG.md $(wc -l < "$DIR/LOG.md" 2>/dev/null | tr -d ' ') lines)"
   else
-    echo "project $REL  (DEVDOC.md $( [ -f "$DIR/DEVDOC.md" ] && echo present || echo missing))"
+    echo "project $REL  (state: $(state_file "$DIR" || echo 'missing'))"
   fi
 }
 
@@ -291,11 +318,12 @@ head = (f"[work restore on {src or 'session start'}] This session is attached to
         "What follows is the work item's own record: trust it over a compacted summary; before saying "
         "whether something was done, check the log, git or the conversation, never memory alone. "
         + (f"Business rules: {biz}. " if biz else "")
-        + ("Keep DEVDOC.md current (state, TODO, change log: `tools/work/log \"…\"`).\n\n" if kind == "project"
+        + ("Keep the project state file current (state, TODO, change log: `tools/work/log \"…\"`).\n\n" if kind == "project"
            else "Keep logging: `tools/work/log \"…\"`; refresh HANDOFF.md at milestones.\n\n"))
 if kind == "project":
     if os.path.exists(os.path.join(d, "CLAUDE.md")): head += f"Project knowledge: {rel}/CLAUDE.md.\n\n"
-    body = head + "## DEVDOC.md\n" + cut(read(os.path.join(d, "DEVDOC.md")), BUDGET - len(head) - 20, f"{rel}/DEVDOC.md")
+    sf = next((f for f in ("DEVDOC.md", ".state/DEVDOC.md", "docs/HANDOFF.md") if os.path.exists(os.path.join(d, f))), "DEVDOC.md")
+    body = head + f"## {sf}\n" + cut(read(os.path.join(d, sf)), BUDGET - len(head) - 20, f"{rel}/{sf}")
 else:
     state = cut(read(os.path.join(d, "STATE.md")).strip(), 2500, f"{rel}/STATE.md")
     handoff = cut(read(os.path.join(d, "HANDOFF.md")).strip(), 3000, f"{rel}/HANDOFF.md")

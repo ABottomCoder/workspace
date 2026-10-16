@@ -92,6 +92,12 @@ Concrete technical traps in code, data, builds, deploys and infrastructure, with
 **Rule:** Use `locator.pressSequentially(text, {delay: 10-15})` or `.fill()` for bulk text, and keep per-character jitter only for short, detection-sensitive fields. Enforce platform input limits in code, schema and agent guidance. When a scripted submit fails silently and the dialog stays open, take a screenshot: usually a validation rule has disabled the button, and the selector is fine.
 **Seen:** 2
 
+### Same code path, different outcome: suspect the input, not the shared code
+**Mistake:** Two orders went through identical combo-order code; one filled, one did not. The shared order code was blamed and changed, then had to be reverted: the second order's target price was simply never reached that day.
+**Root cause:** Changed code on a hypothesis instead of comparing the inputs; when one input succeeds through a path, the path is very likely fine.
+**Rule:** Change code only on evidence (log line, error, reproduction, data comparison); if the cause is unknown, say "root cause not found yet" instead of guess-and-patch. When a shared path works for input A and fails for B, compare the inputs, external state (market, account, rate limits), timing and runtime context (worker thread vs main) before touching the shared code.
+**Seen:** 2
+
 ### Swapping a dependency: stored copies keep the old call shape
 **Mistake:** A vendor integration was swapped by updating the allowlist and the prompt template, but each agent's prompt had been copied into its DB row at creation, so existing agents kept the old field names. The new vendor's limit field also counted pages, not items (about 20x the cost).
 **Root cause:** The template was treated as live config, though stored copies are not references, and fields with the same name were assumed to use the same units.
