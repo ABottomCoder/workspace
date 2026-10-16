@@ -12,3 +12,5 @@
 .DS_Store
 DEVDOC.md
 !templates/project/DEVDOC.md
+__pycache__/
+*.pyc
