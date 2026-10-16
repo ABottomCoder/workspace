@@ -78,7 +78,7 @@ Generic lessons → `lessons/`; the person → `user/`; a company → `business/
 | `tools/rollover/RULES.md` | auto-handoff when a transcript passes the size limit; takeover steps | the Stop hook says the session is over the limit; taking over a handoff |
 | `tools/guard/` | pre-commit leak guard, path-lint, routing check | committing to this repo |
 | `apps/README.md`, `apps/RULES.md` | chat apps (bots): take over by name, channels, conduct (ack before long work) | "use <channel>_<name> to run this session" |
-| `kits/index.md` | standalone tools: page chat, meeting proxy, MCP scaffold, decks, contrast, app provisioning | a task matches a kit |
+| `kits/index.md` | standalone tools: page chat, meeting proxy, MCP scaffold, decks, diagrams, contrast, app provisioning | a task matches a kit; drawing an architecture diagram |
 | `templates/` | business, project, ticket, user templates | creating any of those |
 | `.claude/skills/` | onboard-business, attach, ticket, handoff, resume, qa, scan-sessions, app | via their triggers |
 

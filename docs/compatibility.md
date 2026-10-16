@@ -40,3 +40,4 @@ branch inline in one file; large or tool-specific ones (osascript, launchd) get 
 | Work items and project state files | `tools/work/work`, `tools/lib/state.sh` | ⬜ | ✅ | ⬜ |
 | Routing / leak check on writes (PostToolUse hook) | `tools/guard/route-check.sh` (Windows `D:\x` paths converted with `cygpath -u` before matching) | ⬜ | ✅ | ⬜ |
 | Test suite (pure bash, one copy for all OSes; runs in pre-commit when tools/ or tests/ change) | `tests/run.sh`, `tests/test_*.sh` (OS-specific assertions use `skip_unless_os`) | ⬜ | ✅ (23 tests) | ⬜ |
+| diagrams kit (shape library, arrow check, renderer; Chrome found per OS or via `CHROME`) | `kits/diagrams/` | ⬜ | ✅ (legend rendered and checked; planted violation flagged) | ⬜ |

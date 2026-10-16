@@ -24,7 +24,8 @@ Start Claude Code in this directory; `CLAUDE.md` is the entry point the agent re
   hook runs them whenever `tools/` or `tests/` change.
 - **Skills.** `onboard-business`, `attach`, `ticket`, `handoff`, `resume`, `qa`, `scan-sessions`, `app`.
 - **Apps and kits.** `apps/`: chat bots any session can take over by name (Slack adapter). `kits/`: standalone
-  tools (page chat, meeting proxy, MCP scaffold, deck tools, contrast check, Slack app provisioning).
+  tools (page chat, meeting proxy, MCP scaffold, deck tools, architecture-diagram standard, contrast check, Slack app
+  provisioning).
 
 ## Setup on a new device
 
