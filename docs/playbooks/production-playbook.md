@@ -225,7 +225,7 @@ Observability is a design constraint, not a pre-launch add-on: structured logs w
   - **Soak / endurance:** moderate load for hours/days to catch **memory leaks, fd/connection leaks, unbounded cache growth**: the slow killers short tests never see.
 - **Actually detect races** (not by luck):
   - **Dynamic race detectors:** Go `go test -race`, ThreadSanitizer for C/C++/Rust, Java `jcstress`. **Run the whole CI suite under `-race`.**
-  - **Deterministic simulation testing (DST):** run on a controlled scheduler + clock + network so any interleaving reproduces from a seed (the FoundationDB / TigerBeetle approach; in Rust: madsim / Shuttle / Loom).
+  - **Deterministic simulation testing (DST):** run on a controlled scheduler + clock + network so any interleaving reproduces from a seed (the FoundationDB / TigerBeetle approach; in Rust: madsim / Shuttle / tokio's model checker).
   - **Distributed correctness, Jepsen:** inject partitions / clock skew / process kills into databases and queues, verify linearizability and detect isolation anomalies with the Elle / Knossos checkers. TLA+ can model the design first.
 - **Idempotency and concurrency-control tests:**
   - **Idempotency:** send N concurrent duplicate requests with the same key; assert the side effect happens **exactly once** (one charge, one row).

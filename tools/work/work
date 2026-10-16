@@ -50,10 +50,10 @@ bound() {   # print the bound target of this session, or fail
 
 target_or_bound() { if [ -n "${1:-}" ]; then resolve "$1"; else local b; b=$(bound) || die "no target given and this session is not attached (work attach <target>)"; resolve "$b"; fi; }
 
-# Project live-state file, first that exists: DEVDOC.md (local, gitignored), .state/DEVDOC.md (orphan-branch
-# worktree, for repos whose state must not reach main), docs/HANDOFF.md (committed, personal repos).
-STATE_FILES="DEVDOC.md .state/DEVDOC.md docs/HANDOFF.md"
-state_file() { local f; for f in $STATE_FILES; do [ -f "$1/$f" ] && { echo "$f"; return 0; }; done; return 1; }
+# Project live-state file: DEVDOC.md (local, gitignored), .state/DEVDOC.md (orphan-branch worktree, for repos whose
+# state must not reach main), docs/HANDOFF.md (committed, personal repos). Helpers shared with tools/rollover.
+. "$HERE/../lib/state.sh"
+STATE_FILES="$WORK_STATE_FILES"
 
 need_ticket() { [ "$KIND" = ticket ] || die "$REL is a project; projects keep state in $(state_file "$DIR" || echo DEVDOC.md)"; [ -f "$DIR/STATE.md" ] || [ -f "$DIR/LOG.md" ] || die "no ticket at $REL (work new-ticket ...)"; }
 
@@ -103,13 +103,12 @@ cmd_attach() {
   local s; s=$(sid) || die "no session id (run from a Claude Code Bash call)"
   if [ "$KIND" = project ]; then
     [ -d "$DIR" ] || die "no project dir $REL"
-    local pol=""; pol=$(grep -m1 -i 'project state policy' "$ROOT/business/$(echo "$REL" | cut -d/ -f2)/stack.md" 2>/dev/null)
-    case "$pol" in *"|"*) pol="" ;; esac   # template line lists the options: no policy chosen yet
-    if ! state_file "$DIR" >/dev/null && [ -n "$pol" ] && printf '%s' "$pol" | grep -q 'docs/HANDOFF.md'; then
+    local pol; pol=$(state_policy "$ROOT" "$(echo "$REL" | cut -d/ -f2)")
+    if ! state_file "$DIR" >/dev/null && [ "$pol" = in-repo ]; then
       mkdir -p "$DIR/docs"
       printf '# %s — handoff\n\n## Current state\n\n## Change log\n\n## Session log (newest first)\n' "$(basename "$DIR")" > "$DIR/docs/HANDOFF.md"
       echo "created $REL/docs/HANDOFF.md (business state policy: in-repo)"
-    elif ! state_file "$DIR" >/dev/null && printf '%s' "$pol" | grep -qi 'orphan'; then
+    elif ! state_file "$DIR" >/dev/null && [ "$pol" = orphan ]; then
       local prev; prev=$(bound 2>/dev/null) || prev="nothing"
       die "business state policy is orphan branch: set up $REL/.state first (tools/work/README.md -> Project state policy); still attached to $prev"
     fi

@@ -1,0 +1,11 @@
+# Line endings are fixed in the repo so every device (macOS, Linux, Windows) behaves the same,
+# whatever its core.autocrlf. Text is stored LF; scripts are also checked out LF so bash runs them.
+* text=auto
+*.sh text eol=lf
+tools/work/* text eol=lf
+tools/guard/pre-commit text eol=lf
+apps/bin/* text eol=lf
+kits/meeting-proxy/MeetingProxy.app/Contents/MacOS/* text eol=lf
+*.png binary
+*.jpg binary
+*.ico binary

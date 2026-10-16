@@ -1,6 +1,6 @@
 ---
 name: resume
-description: Pick up a work item a previous session saved (ticket HANDOFF/LOG or project DEVDOC) and continue seamlessly. Use when the user says "resume X", "continue X", "pick up X", "where were we on X", or when a session starts from a rollover handoff.
+description: Pick up a work item a previous session saved (ticket HANDOFF/LOG or project state file) and continue seamlessly. Use when the user says "resume X", "continue X", "pick up X", "where were we on X", or when a session starts from a rollover handoff.
 argument-hint: "[<business>/<project> | <business>/tickets/<ID> | user/work/<slug>] (lists open work if omitted)"
 ---
 
@@ -17,7 +17,7 @@ argument-hint: "[<business>/<project> | <business>/tickets/<ID> | user/work/<slu
 ## 2. Bind and read
 
 `bash tools/work/attach <target>` (skip if already bound), then read fully: ticket `STATE.md`,
-`HANDOFF.md` (resume-here and verified facts first), the `LOG.md` tail; or the project `DEVDOC.md`
+`HANDOFF.md` (resume-here and verified facts first), the `LOG.md` tail; or the project state file (`tools/work/show`)
 (and its `## Session handoff` section after a rollover). Read linked reports only if you need that depth.
 
 ## 3. Re-establish ground truth

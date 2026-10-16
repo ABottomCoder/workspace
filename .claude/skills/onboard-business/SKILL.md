@@ -80,8 +80,10 @@ For each repo confirmed (or clearly) the team's:
   README, quick-start commands from build files (`package.json`, `Makefile`, `pyproject.toml`,
   `pom.xml`, `docker-compose*`), base branch and recent activity from `git log`. Mark guesses
   `[UNVERIFIED]`. If the repo already has a `CLAUDE.md`, leave it alone.
-- Create `<project>/DEVDOC.md` from `templates/project/DEVDOC.md` and make sure `DEVDOC.md` is
-  ignored by that repo (prefer `.git/info/exclude`, which changes nothing the team sees).
+- Create the project state file per the business state policy (Step 5 records it in `stack.md`;
+  `tools/work/work attach <co>/<project>` does it): local → `DEVDOC.md` from `templates/project/DEVDOC.md`,
+  ignored by that repo (prefer `.git/info/exclude`, which changes nothing the team sees); orphan branch →
+  `.state/` worktree (`tools/work/README.md`); in-repo → `docs/HANDOFF.md`, committed.
 
 ## Step 5 — Fill the business files
 

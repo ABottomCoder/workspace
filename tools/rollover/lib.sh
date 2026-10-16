@@ -2,6 +2,7 @@
 ROLLOVER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$ROLLOVER_DIR/../.." && pwd)"
 . "$ROOT/tools/lib/cc-internals.sh"
+. "$ROOT/tools/lib/state.sh"
 STATE="$ROOT/user/sessions/.rollover"
 BIND="$ROOT/user/sessions/.bindings"
 
@@ -23,7 +24,7 @@ handoff_path() {
   case "$t" in
     "") echo "$STATE/$1.handoff.md" ;;
     user/work/*|business/*/tickets/*) echo "$ROOT/$t/HANDOFF.md" ;;
-    *) echo "$ROOT/$t/DEVDOC.md" ;;
+    *) local f; f=$(state_file "$ROOT/$t") || f=$(state_default "$ROOT" "$(echo "$t" | cut -d/ -f2)"); echo "$ROOT/$t/$f" ;;
   esac
 }
 

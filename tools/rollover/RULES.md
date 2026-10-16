@@ -9,11 +9,12 @@ checks after every reply and fires once per session.
 Do it right away, without asking the user:
 
 1. **Update the durable records first**: the bound work item (`LOG.md` via `tools/work/log`, or the
-   project `DEVDOC.md` change log), lessons, memory pointers. The handoff points at them instead of
+   project state-file change log), lessons, memory pointers. The handoff points at them instead of
    copying them.
 2. **Write the handoff where the hook says** — into the bound work item:
    - ticket / `user/work/<slug>`: `tools/work/handoff` (archives the old one), then fill `HANDOFF.md`;
-   - project: update `DEVDOC.md` (state, active work, TODO) and its `## Session handoff` section;
+   - project: update its state file (`tools/work/show`: `DEVDOC.md`, `.state/DEVDOC.md` or `docs/HANDOFF.md`)
+     (state, active work, TODO) and its `## Session handoff` section;
    - not attached: `user/sessions/.rollover/<session-id>.handoff.md`.
 
    Short, but enough for a session with no other context:

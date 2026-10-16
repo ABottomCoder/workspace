@@ -1,7 +1,9 @@
 # Compatibility
 
 Every platform-, terminal- or vendor-specific piece, named as a variant (`<name>.<variant>.<ext>`, or a
-labelled section in a doc). Add a row whenever a variant is added. ✅ works · ❌ not available · ⬜ untested / not written.
+labelled section in a doc; alternatives sit beside it, e.g. `launch.mac-iterm.sh` next to `launch.mac-terminal.sh`).
+Add a row whenever a variant is added. New scripts committed from Windows (`core.fileMode=false`) need
+`git update-index --chmod=+x <file>` or they are not executable on macOS/Linux. ✅ works · ❌ not available · ⬜ untested / not written.
 
 | Feature | File | mac | linux |
 |---|---|---|---|

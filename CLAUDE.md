@@ -56,28 +56,13 @@ Unknown business ("I joined X", "scan and fill business info for X") → skill `
     pasted or committed.
 13. **Subagents** for wide or parallel reads and to protect context; not for single known-file lookups,
     never to verify your own work.
-14. **After any correction**, add or strengthen a lesson in the right tier (below). Changing an
-    existing rule in this file goes through the user.
+14. **After any correction**, add or strengthen a lesson in the right tier (`docs/reference/knowledge-routing.md`).
+    Changing an existing rule in this file goes through the user.
 
 ## Where to put what
 
-| Content | Home |
-|---|---|
-| Agent-behaviour truths that hold anywhere | `lessons/<category>.md`, `docs/principles/` |
-| This user's preferences, taste, persona | `user/profile.md`, `user/lessons.md`, `user/persona.md` |
-| Company people, roles, authority | `business/<co>/people.md` |
-| Company systems, environments, MCPs | `business/<co>/stack.md` |
-| Company-specific lessons | `business/<co>/lessons.md` |
-| Repo knowledge (build, architecture, gotchas) | `business/<co>/<project>/CLAUDE.md` |
-| Project live state | `business/<co>/<project>/DEVDOC.md` |
-| Ticket state, spec, reports, evidence | `business/<co>/tickets/<ID>/` (ID as in the ticket system, else short kebab description) |
-| Non-ticket deliverables, research, recaps | `business/<co>/docs/<topic>/` |
-| Cross-business work items | `user/work/<slug>/` |
-| Daily log | `user/logs/YYYYMMDD.log`, lines prefixed with the business |
-| Auto-memory (`user/memory/`) | pointers and what fits nowhere else; never business facts |
-
-Before writing anything persistent ask: who needs to read this, in what situation? A lesson that still
-holds with the business details removed is promoted to `lessons/` with a pointer left behind.
+Generic lessons → `lessons/`; the person → `user/`; a company → `business/<co>/`; repo knowledge → the project
+`CLAUDE.md`; auto-memory holds pointers only, never business facts. Full table and promotion rule: `docs/reference/knowledge-routing.md`.
 
 ## Index
 
@@ -86,10 +71,10 @@ holds with the business details removed is promoted to `lessons/` with a pointer
 | `docs/principles/index.md` | evidence, ask-gate, decision ladder, verification, backups, subagents, communication | the rule above isn't enough |
 | `docs/process/index.md` | light/heavy track, ticket lifecycle, reporting, PR review, QA session, harness, data verification | starting a ticket; the business tier is heavy |
 | `docs/playbooks/index.md` | production playbook, AI client-build playbook (+lite), handover, AI-coding pitfalls | start of a new build |
-| `docs/reference/index.md` | setup methodology, MCP/CLI, secrets, browser testing, model-tuned rules | setup, credentials, tooling |
-| `docs/compatibility.md` | every platform/terminal/vendor variant file and where it works | touching any `*.<variant>.*` file |
+| `docs/reference/index.md` | knowledge routing, setup methodology, MCP/CLI, secrets, browser testing, model-tuned rules | writing anything persistent; setup, credentials, tooling |
+| `docs/compatibility.md` | variant naming (`<name>.<variant>.<ext>`) and where each variant works | touching any platform-, terminal- or vendor-specific file |
 | `lessons/index.md` | generic lessons by category | session start; after a correction |
-| `tools/work/README.md` | work items, attach/restore, ticket dirs, `INDEX.md` | any project or ticket work |
+| `tools/work/README.md` | work items, attach/restore, project state policy, ticket dirs, `INDEX.md` | any project or ticket work |
 | `tools/rollover/RULES.md` | auto-handoff when a transcript passes the size limit; takeover steps | the Stop hook says the session is over the limit; taking over a handoff |
 | `tools/guard/` | pre-commit leak guard, path-lint, routing check | committing to this repo |
 | `apps/README.md`, `apps/RULES.md` | chat apps (bots): take over by name, channels, conduct (ack before long work) | "use <channel>_<name> to run this session" |
@@ -97,12 +82,7 @@ holds with the business details removed is promoted to `lessons/` with a pointer
 | `templates/` | business, project, ticket, user templates | creating any of those |
 | `.claude/skills/` | onboard-business, attach, ticket, handoff, resume, qa, scan-sessions, app | via their triggers |
 
-Variant naming: a file that only works on one platform, terminal or vendor is named
-`<name>.<variant>.<ext>` (`launch.mac-iterm.sh`); alternatives sit beside it and are listed in
-`docs/compatibility.md`.
-
 ## Businesses
 
-This file is committed, so it never lists businesses. The businesses on this machine are the
-directories under `business/`; each `business/<co>/CLAUDE.md` opens with a one-line summary and its
-tier. `onboard-business` creates new ones — it never edits this file.
+Never listed here (this file is committed): they are the directories under `business/`, each opening its
+`CLAUDE.md` with a one-line summary and tier. `onboard-business` creates them and never edits this file.

@@ -8,10 +8,10 @@ argument-hint: "<business>/<project> | <business>/tickets/<ID> | user/work/<slug
 
 1. **Route.** Identify the business and the project or ticket from the request (`business/*/CLAUDE.md`
    index lines, ticket IDs, repo names). Ask only if genuinely ambiguous.
-2. **Read** `business/<co>/CLAUDE.md`, then the project `CLAUDE.md` + `DEVDOC.md`, or the ticket
+2. **Read** `business/<co>/CLAUDE.md`, then the project `CLAUDE.md` + its state file, or the ticket
    `STATE.md` + `HANDOFF.md` + tail of `LOG.md`.
 3. **Bind:** `bash tools/work/attach <target>`
-   - project: `<co>/<project>` (creates `DEVDOC.md` from the template if missing; keep it gitignored)
+   - project: `<co>/<project>` (creates the state file per the business policy if none exists: `tools/work/README.md` → Project state policy)
    - ticket: `<co>/tickets/<ID>`; if it does not exist yet, use the `ticket` skill to create it first
    - cross-business: `user/work/<slug>` (create with `tools/work/new-ticket user <slug> "title"`)
 4. **Name the session** `<ShortDesc>_<app>_<n>` (ShortDesc = project or ticket, no underscores;

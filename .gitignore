@@ -11,3 +11,4 @@
 **/node_modules/
 .DS_Store
 DEVDOC.md
+!templates/project/DEVDOC.md

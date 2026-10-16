@@ -31,7 +31,7 @@ h=$(handoff_path "$sid")
 target=$(bound_target "$sid")
 case "$h" in
   */HANDOFF.md) how="First run \`bash tools/work/handoff ${target}\` (archives the current one), then fill the fresh $h." ;;
-  */DEVDOC.md)  how="Update $h: state, active work, TODO, and a \`## Session handoff\` section (replace any older one)." ;;
+  */DEVDOC.md|*/docs/HANDOFF.md)  how="Update $h: state, active work, TODO, and a \`## Session handoff\` section (replace any older one)." ;;
   *)            how="Write it to $h (this session is not attached to a work item)." ;;
 esac
 reason="This session's transcript is ${mb} MB (limit ${LIMIT_MB} MB). Hand off to a new session now, without asking the user (tools/rollover/RULES.md):

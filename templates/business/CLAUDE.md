@@ -29,7 +29,7 @@
 
 | Project | What it is | Base branch | Details |
 |---|---|---|---|
-| <project> | <one line> | <main> | `<project>/CLAUDE.md`, live state `<project>/DEVDOC.md` |
+| <project> | <one line> | <main> | `<project>/CLAUDE.md`, live state: the project state file (policy in `stack.md`) |
 
 ## Pending
 

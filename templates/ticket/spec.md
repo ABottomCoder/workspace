@@ -41,4 +41,4 @@ destructive op, secret, shared-infra change you cannot cleanly roll back
 ## 5. What actually shipped (fill in after; becomes the audit trail)
 
 - Commits / PRs, deploy steps run, verification evidence, deferred follow-ups.
-- Mirror one line into `LOG.md` and the project `DEVDOC.md` change log.
+- Mirror one line into `LOG.md` and the project state-file change log (`tools/work/log`).
