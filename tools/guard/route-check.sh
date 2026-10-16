@@ -9,6 +9,9 @@ f=$(python3 -c 'import json,sys
 try: print(json.load(sys.stdin).get("tool_input",{}).get("file_path",""))
 except Exception: pass' 2>/dev/null)
 [ -n "$f" ] || exit 0
+# Windows: Claude Code passes D:\x paths; compare everything in one (POSIX) form or nothing ever matches.
+. "$here/../lib/os.sh"
+if [ "$(os_variant)" = win ]; then f=$(cygpath -u "$f"); ROOT=$(cygpath -u "$ROOT"); fi
 emit() { python3 -c 'import json,sys; print(json.dumps({"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":sys.argv[1]}}))' "$1"; }
 
 case "$f" in
