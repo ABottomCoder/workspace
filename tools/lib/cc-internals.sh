@@ -16,7 +16,9 @@ cc_encode_path() { printf '%s' "$1" | sed 's/[^A-Za-z0-9]/-/g'; }
 
 cc_projects_base() { printf '%s' "${CC_PROJECTS_BASE:-$HOME/.claude/projects}"; }
 
-cc_transcript_dir() { printf '%s/%s' "$(cc_projects_base)" "$(cc_encode_path "$1")"; }
+# Claude Code encodes the OS-native path (Windows: D:\x -> D--x), so Git Bash paths (/d/x) are converted first.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/os.sh"
+cc_transcript_dir() { printf '%s/%s' "$(cc_projects_base)" "$(cc_encode_path "$(native_path "$1")")"; }
 
 # Transcript records: {"type":"custom-title","customTitle":"<name>","sessionId":"..."}; last one wins.
 cc_session_title() {

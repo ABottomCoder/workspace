@@ -1,12 +1,13 @@
 #!/bin/bash
 # Make Claude Code keep this main dir's transcripts inside it (spec §3.6):
-#   ~/.claude/projects/<encoded main dir>  ->  <main>/user/sessions   (symlink)
+#   ~/.claude/projects/<encoded main dir>  ->  <main>/user/sessions   (symlink; Windows: junction, tools/lib/link.win.sh)
 # Idempotent. Refuses when a real non-empty transcript dir exists, unless --merge (moves its
 # entries into user/sessions first; stops on any name clash). --dry-run prints the plan only.
 # Run it with no Claude session open in the main dir.
 set -eu
 MAIN="$(cd "$(dirname "$0")/../.." && pwd)"
 . "$MAIN/tools/lib/cc-internals.sh"
+. "$MAIN/tools/lib/link.sh"
 merge=0; dry=0
 for a in "$@"; do case "$a" in --merge) merge=1;; --dry-run) dry=1;; *) echo "usage: $0 [--merge] [--dry-run]" >&2; exit 2;; esac; done
 link=$(cc_transcript_dir "$MAIN"); dest="$MAIN/user/sessions"
@@ -32,5 +33,5 @@ elif [ -e "$link" ]; then
   echo "refusing: $link exists and is not a directory" >&2; exit 1
 fi
 run mkdir -p "$dest" "$(dirname "$link")"
-run ln -s "$dest" "$link"
+run dir_link "$dest" "$link"
 echo "done: new transcripts for $MAIN land in $dest"

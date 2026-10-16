@@ -2,7 +2,7 @@
 # One-time (idempotent) setup of this workspace on a machine. Safe to re-run.
 #  1. user/ from templates/user/ (only files that don't exist yet)
 #  2. .claude/settings.local.json with autoMemoryDirectory -> user/memory (machine-specific absolute path)
-#  3. transcripts: ~/.claude/projects/<encoded main dir> -> user/sessions (symlink)
+#  3. transcripts: ~/.claude/projects/<encoded main dir> -> user/sessions (symlink; Windows: junction)
 #  4. pre-commit leak guard
 set -euo pipefail
 MAIN="$(cd "$(dirname "$0")" && pwd -P)"
@@ -12,7 +12,7 @@ echo "== user/"
 mkdir -p user/memory user/sessions user/logs user/work business
 if [ -d templates/user ]; then
   (cd templates/user && find . -type f) | while read -r f; do
-    case "$f" in ./feedback/*) dst="user/memory/${f#./feedback/}" ;; ./MEMORY.md) dst="user/memory/MEMORY.md" ;; *) dst="user/${f#./}" ;; esac
+    case "$f" in ./feedback/feedback_use_subagents.md) continue ;; ./feedback/*) dst="user/memory/${f#./feedback/}" ;; ./MEMORY.md) dst="user/memory/MEMORY.md" ;; *) dst="user/${f#./}" ;; esac
     if [ ! -e "$dst" ]; then mkdir -p "$(dirname "$dst")"; cp "templates/user/${f#./}" "$dst"; echo "  + $dst"; fi
   done
 fi
@@ -20,7 +20,8 @@ fi
 
 echo "== .claude/settings.local.json"
 LOCAL=.claude/settings.local.json
-python3 - "$LOCAL" "$MAIN/user/memory" <<'EOF'
+. tools/lib/os.sh   # Claude Code needs the OS-native path (Windows: D:\...)
+python3 - "$LOCAL" "$(native_path "$MAIN/user/memory")" <<'EOF'
 import json, os, sys
 p, mem = sys.argv[1], sys.argv[2]
 d = json.load(open(p)) if os.path.exists(p) else {}
