@@ -39,3 +39,4 @@ update its row. OS-specific pieces load through a dispatcher keyed on `os_varian
 | Links: POSIX | `tools/lib/link.mac.sh` (`ln -s`; same commands as before the split, not re-run) | ⬜ | ❌ | ⬜ |
 | Links: Windows | `tools/lib/link.win.sh` (junction via `mklink /J`; hook = wrapper script) | ❌ | ✅ (install.sh end to end, hook blocked a planted secret) | ❌ |
 | Work items and project state files | `tools/work/work`, `tools/lib/state.sh` | ⬜ | ✅ | ⬜ |
+| Routing / leak check on writes (PostToolUse hook) | `tools/guard/route-check.sh` (Windows `D:\x` paths converted with `cygpath -u` before matching) | ⬜ | ✅ | ⬜ |

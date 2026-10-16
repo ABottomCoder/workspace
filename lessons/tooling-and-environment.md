@@ -36,6 +36,12 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 **Rule:** Prefer letting the MCP server launch and manage its own browser. If you must attach, do it yourself, never as a user chore: quit all running instances, relaunch with `--remote-debugging-port=9222` using the profile the MCP expects, capture stderr, and verify with `curl localhost:9222/json/version`. If the MCP tools disappear, the browser died; relaunch it.
 **Seen:** 3
 
+### Windows paths inside generated Python code: raw strings or no inline literals
+**Mistake:** Python snippets fed through a shell heredoc contained Windows paths such as `D:\x` or `\w`; each run died with `SyntaxError: (unicode error) 'unicodeescape'` (or a warning that silently changed the text), and in one case the edit never happened while the following commit still went through. It happened three times in one session.
+**Root cause:** `\x`, `\u` and `\N` start escape sequences in normal Python string literals; a backslash path in the code itself is parsed, not copied.
+**Rule:** Never put a Windows path or other backslash text in a normal Python string literal. Pass it as an argument (`sys.argv`), read it from a file, or use a raw string (`r"..."`, and avoid a trailing backslash). For edits to existing files prefer an exact-replace edit tool over regenerated code. After any scripted edit, check the edit landed before committing.
+**Seen:** 3
+
 ### Background schedulers run without your PATH or your folder permissions
 **Mistake:** A cron "safety net" ran bare `node` and failed every run with output sent to `/dev/null`, piling up orphans during an outage; cron and then launchd jobs failed "Operation not permitted" because the scripts lived under `~/Documents`.
 **Root cause:** cron/launchd use a minimal environment without rc-file PATH additions, and on macOS `~/Documents`, `~/Desktop` and `~/Downloads` are privacy-protected folders whose GUI grants background jobs do not inherit.
