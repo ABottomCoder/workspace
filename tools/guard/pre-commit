@@ -4,6 +4,7 @@
 #   - secret-looking tokens (Slack, GitHub, AWS, private keys, Anthropic, Stripe live)
 #   - absolute home paths (/Users/<name>, /home/<name>)
 #   - terms from user/denylist.txt (case-insensitive, word boundaries)
+# and, when tools/ or tests/ files are staged, runs tests/run.sh (a failing test blocks the commit).
 # Matched secret values are never printed. Install: tools/guard/install.sh. Bypass (rare, deliberate):
 # git commit --no-verify.
 here="$(cd "$(dirname "$(readlink "$0" 2>/dev/null || echo "$0")")" && pwd)"
@@ -29,3 +30,7 @@ while IFS= read -r f; do
     report "denylist term in $f:"; printf '%s\n' "$hits" | sed 's/^/    /' >&2; fi
 done <<< "$files"
 [ $fail = 0 ] || { echo "pre-commit: commit blocked. Fix the above (or move the data to user/ or business/)." >&2; exit 1; }
+# Tool changes must keep the test suite green (seconds; skipped for docs-only commits).
+if printf '%s\n' "$files" | grep -qE '^(tools|tests)/' && [ -f "$top/tests/run.sh" ]; then
+  out=$(bash "$top/tests/run.sh" 2>&1) || { printf '%s\n' "$out" | grep -E 'FAIL|failed' >&2; echo "pre-commit: tests failed; commit blocked (bash tests/run.sh)." >&2; exit 1; }
+fi

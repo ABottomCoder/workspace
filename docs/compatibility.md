@@ -6,7 +6,8 @@ Add a row whenever a variant is added. New scripts committed from Windows (`core
 `git update-index --chmod=+x <file>` or they are not executable on macOS/Linux. ✅ works · ❌ not available · ⬜ untested / not written.
 
 Policy: support macOS and Windows (Git Bash); add a variant only when a real problem shows up, then add or
-update its row. OS-specific pieces load through a dispatcher keyed on `os_variant` (`tools/lib/os.sh`).
+update its row. Detect the OS with `os_variant` (`tools/lib/os.sh`). Small differences (roughly under 20 lines)
+branch inline in one file; large or tool-specific ones (osascript, launchd) get variant files and a dispatcher.
 
 | Feature | File | mac | win | linux |
 |---|---|---|---|---|
@@ -35,8 +36,7 @@ update its row. OS-specific pieces load through a dispatcher keyed on `os_varian
 | Transcript dir symlink | `tools/sessions/setup-transcript-link.sh` | ✅ (fixture only) | ⬜ | ⬜ |
 | Leak guard | `tools/guard/{pre-commit,path-lint.sh,route-check.sh,install.sh}` | ✅ | ⬜ | ✅ |
 | OS detection | `tools/lib/os.sh` (`os_variant`: mac / win / linux; `native_path`) | ⬜ | ✅ | ⬜ |
-| Directory links, git-hook links (dispatcher) | `tools/lib/link.sh` → `link.<variant>.sh` by `os_variant`; linux uses the mac (POSIX) variant | ⬜ | ✅ | ⬜ |
-| Links: POSIX | `tools/lib/link.mac.sh` (`ln -s`; same commands as before the split, not re-run) | ⬜ | ❌ | ⬜ |
-| Links: Windows | `tools/lib/link.win.sh` (junction via `mklink /J`; hook = wrapper script) | ❌ | ✅ (install.sh end to end, hook blocked a planted secret) | ❌ |
+| Directory links, git-hook links | `tools/lib/link.sh` (one file, inline per OS: POSIX `ln -s`; Windows junction via `mklink /J`, hook = wrapper script) | ⬜ (same commands as before, not re-run) | ✅ (install.sh end to end; hook blocked a planted secret) | ⬜ |
 | Work items and project state files | `tools/work/work`, `tools/lib/state.sh` | ⬜ | ✅ | ⬜ |
 | Routing / leak check on writes (PostToolUse hook) | `tools/guard/route-check.sh` (Windows `D:\x` paths converted with `cygpath -u` before matching) | ⬜ | ✅ | ⬜ |
+| Test suite (pure bash, one copy for all OSes; runs in pre-commit when tools/ or tests/ change) | `tests/run.sh`, `tests/test_*.sh` (OS-specific assertions use `skip_unless_os`) | ⬜ | ✅ (23 tests) | ⬜ |

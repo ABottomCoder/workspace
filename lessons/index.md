@@ -6,7 +6,11 @@ Generic agent-behaviour lessons that hold at any company. Business-specific less
 **At session start:** scan this index and the routed business's lessons; open a category file when the
 work touches it. **After any correction:** add or strengthen an entry in the right category (never a
 duplicate). **Promotion:** when a business lesson still holds with the business details removed, add the
-generic form here and leave a pointer in the business file.
+generic form here and leave a pointer in the business file. **Into the core rules** (`CLAUDE.md`, loaded
+every session) only a lesson that is a cross-domain behaviour reflex (evidence, verification, pushback,
+checking state after a failure) and keeps recurring; propose it, the user approves. A high Seen count in one
+domain (code, communication, operations) is not enough: it reflects how often that task is done, and loading
+it everywhere wastes context on unrelated work. Domain lessons stay in their category file.
 
 Entry format: `### <short title>` / **Mistake:** / **Root cause:** / **Rule:** / **Seen:** <times merged>.
 Entries are ordered by Seen.

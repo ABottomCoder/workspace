@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install the pre-commit guard as a git hook (symlink; Windows: wrapper script, tools/lib/link.win.sh). Usage: install.sh [repo dir] [--force]
+# Install the pre-commit guard as a git hook (symlink; Windows: wrapper script, tools/lib/link.sh). Usage: install.sh [repo dir] [--force]
 # Default repo: the framework repo this script lives in. --force replaces an existing hook.
 set -eu
 here="$(cd "$(dirname "$0")" && pwd)"
