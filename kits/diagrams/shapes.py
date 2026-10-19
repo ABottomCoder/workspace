@@ -8,16 +8,47 @@
 def _esc(s):
     return (s or '').replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
+# ---- data-model type tags on storage titles -----------------------------------
+# db / cache / mq titles that start with a known product get a small grey type tag,
+# e.g. "Cassandra (wide-column)". Set TYPE_LANG = 'zh' for Chinese labels, or pass
+# typed=False to a shape to suppress the tag. Longest / most specific product first.
+TYPE_LANG = 'en'
+_TYPE_NAMES = {
+    'relational': ('relational', '关系'), 'kv': ('KV', 'KV'), 'wide': ('wide-column', '宽列'),
+    'doc': ('document', '文档'), 'graph': ('graph', '图'), 'ts': ('time-series', '时序'),
+    'search': ('inverted index', '倒排'), 'log': ('log', '日志'), 'queue': ('queue', '队列'),
+    'pubsub': ('pub/sub', '发布订阅'), 'coord': ('coordination KV', '协调 KV'),
+}
+PRODUCT_TYPES = [
+    ('Redis Pub/Sub', 'pubsub'), ('etcd / ZooKeeper', 'coord'), ('etcd / ZK', 'coord'), ('ZooKeeper', 'coord'),
+    ('etcd', 'coord'), ('Memcached', 'kv'), ('Redis', 'kv'), ('RocksDB', 'kv'), ('DynamoDB', 'kv'),
+    ('PostgreSQL', 'relational'), ('MySQL', 'relational'), ('SQLite', 'relational'), ('MyRocks', 'relational'),
+    ('Cassandra', 'wide'), ('ScyllaDB', 'wide'), ('HBase', 'wide'), ('Bigtable', 'wide'),
+    ('MongoDB', 'doc'), ('Neo4j', 'graph'), ('InfluxDB', 'ts'), ('KDB', 'ts'), ('Elasticsearch', 'search'),
+    ('Kafka', 'log'), ('RabbitMQ', 'queue'),
+]
+
+def _typed(title):
+    """Escaped title markup with a type tspan after a known product name (or plain escaped title)."""
+    t = title or ''
+    for prod, key in PRODUCT_TYPES:
+        if t.startswith(prod) and not t[len(prod):].lstrip().startswith(('式', '(', '\uff08')):
+            name = _TYPE_NAMES[key][1 if TYPE_LANG == 'zh' else 0]
+            return (_esc(prod) + f'<tspan data-type="1" font-size="11" fill="#64748b"> ({name})</tspan>'
+                    + _esc(t[len(prod):]))
+    return _esc(t)
+
 def _g(kind, x, y, w, h, body):
     return f'<g data-kind="{kind}" data-bbox="{x:g},{y:g},{w:g},{h:g}">{body}</g>'
 
-def _text(x, y, w, h, title, sub, dy=0, color='#1e293b', subcolor='#7a8494'):
+def _text(x, y, w, h, title, sub, dy=0, color='#1e293b', subcolor='#7a8494', title_markup=None):
     cx = x + w / 2
+    tm = title_markup if title_markup is not None else _esc(title)
     if sub:
         t1 = y + h / 2 - 3 + dy
-        return (f'<text x="{cx:g}" y="{t1:g}" font-size="13" fill="{color}" text-anchor="middle">{_esc(title)}</text>'
+        return (f'<text x="{cx:g}" y="{t1:g}" font-size="13" fill="{color}" text-anchor="middle">{tm}</text>'
                 f'<text x="{cx:g}" y="{t1 + 16:g}" font-size="11" fill="{subcolor}" text-anchor="middle">{_esc(sub)}</text>')
-    return f'<text x="{cx:g}" y="{y + h / 2 + 5 + dy:g}" font-size="13" fill="{color}" text-anchor="middle">{_esc(title)}</text>'
+    return f'<text x="{cx:g}" y="{y + h / 2 + 5 + dy:g}" font-size="13" fill="{color}" text-anchor="middle">{tm}</text>'
 
 # ---- compute / actors -------------------------------------------------------
 def service(x, y, w, h, title, sub=None):
@@ -48,24 +79,24 @@ def _cyl(x, y, w, h, fill, stroke, dash=''):
     return (f'<path d="{d}" fill="{fill}" stroke="{stroke}" stroke-width="1.5"{da}/>'
             f'<path d="M{x:g},{y + ry:g} A{w / 2:g},{ry:g} 0 0 0 {x + w:g},{y + ry:g}" fill="none" stroke="{stroke}" stroke-width="1.5"{da}/>'), ry
 
-def db(x, y, w, h, title, sub=None):
+def db(x, y, w, h, title, sub=None, typed=True):
     """Database (relational / NoSQL / coordination store like ZK). title = product, e.g. 'MySQL'."""
     body, ry = _cyl(x, y, w, h, '#ecfdf5', '#047857')
-    return _g('db', x, y, w, h, body + _text(x, y, w, h, title, sub, dy=ry / 2))
+    return _g('db', x, y, w, h, body + _text(x, y, w, h, title, sub, dy=ry / 2, title_markup=_typed(title) if typed else None))
 
-def cache(x, y, w, h, title, sub=None):
+def cache(x, y, w, h, title, sub=None, typed=True):
     """In-memory cache (volatile): dashed amber cylinder. title = product, e.g. 'Redis'."""
     body, ry = _cyl(x, y, w, h, '#fefce8', '#a16207', dash='5 3')
-    return _g('cache', x, y, w, h, body + _text(x, y, w, h, title, sub, dy=ry / 2))
+    return _g('cache', x, y, w, h, body + _text(x, y, w, h, title, sub, dy=ry / 2, title_markup=_typed(title) if typed else None))
 
-def mq(x, y, w, h, title, sub=None):
+def mq(x, y, w, h, title, sub=None, typed=True):
     """Message queue / log / pub-sub: horizontal pipe. title = product, e.g. 'Kafka'."""
     rx = max(6, min(12, w * 0.08))
     d = (f'M{x + rx:g},{y:g} H{x + w - rx:g} A{rx:g},{h / 2:g} 0 0 1 {x + w - rx:g},{y + h:g} '
          f'H{x + rx:g} A{rx:g},{h / 2:g} 0 0 1 {x + rx:g},{y:g} Z')
     cap = f'<path d="M{x + w - rx:g},{y:g} A{rx:g},{h / 2:g} 0 0 0 {x + w - rx:g},{y + h:g}" fill="none" stroke="#7c3aed" stroke-width="1.5"/>'
     body = f'<path d="{d}" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>' + cap
-    return _g('mq', x, y, w, h, body + _text(x - rx / 2, y, w, h, title, sub))
+    return _g('mq', x, y, w, h, body + _text(x - rx / 2, y, w, h, title, sub, title_markup=_typed(title) if typed else None))
 
 def obj(x, y, w, h, title, sub=None):
     """Object / blob store: bucket. title = product, e.g. 'S3'."""

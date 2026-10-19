@@ -66,6 +66,11 @@ There is no single industry standard; the C4 model is the most widely used vendo
   text, plus a **storage-choice table** under the diagram: component | choice | why (access pattern → matching
   property; no "high performance" filler) | not chosen (one-line reason). If the source names no product, say
   "unspecified; typical choice".
+- **The data-model type follows the product name** in a smaller grey font: `Cassandra (wide-column)`, `MySQL
+  (relational)`, `Redis (KV)`, `MongoDB (document)`, `Kafka (log)`, `RabbitMQ (queue)`, `ZooKeeper (coordination
+  KV)`. `shapes.py` adds it automatically for `db` / `cache` / `mq` titles that start with a known product
+  (`PRODUCT_TYPES`; `TYPE_LANG = 'zh'` for Chinese labels; `typed=False` to suppress). Object stores get no tag; the
+  bucket already says it. Put the same type after the product in the storage-choice table.
 - **Control plane and data plane are two hops** (get address/credentials, then move bytes), never one arrow.
 - Number the paths: main write W1…, main read R1… (or colour per path + ①②③).
 - **One name per component across diagrams and text.** When a source names the same thing differently in
