@@ -17,8 +17,8 @@ Entries are ordered by Seen.
 
 - [verification](verification.md) (40) — proving a change, fix or claim is true: checks that can fail, real entry points, reading evidence
 - [evidence-and-asking](evidence-and-asking.md) (16) — self-service before asking, hypothesis vs observation, relayed claims, read-only probes
-- [engineering](engineering.md) (23) — generic code and framework gotchas (frontend, backend, database, infra code)
-- [tooling-and-environment](tooling-and-environment.md) (31) — shell, processes, schedulers, CLIs, browsers, platform quirks
+- [engineering](engineering.md) (25) — generic code and framework gotchas (frontend, backend, database, infra code)
+- [tooling-and-environment](tooling-and-environment.md) (32) — shell, processes, schedulers, CLIs, browsers, platform quirks
 - [data-and-production](data-and-production.md) (18) — restarts, migrations, destructive ops, backups, production data and environments
 - [communication](communication.md) (16) — writing for the reader, threads, reports, client promises, user-facing copy
 - [multi-session-and-bots](multi-session-and-bots.md) (12) — parallel sessions and chat bots: identities, listeners, shared files, message delivery

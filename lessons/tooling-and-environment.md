@@ -191,3 +191,9 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 **Root cause:** MSYS translates `/tmp` to its own temp dir; native programs receive the path untranslated or resolve it elsewhere.
 **Rule:** Pass files between bash and native Windows programs through project-relative paths or Windows-form absolute paths (`cygpath -w`), never `/tmp`.
 **Seen:** 1
+
+### Code sent to `page.evaluate` must not define named inner functions under tsx/esbuild
+**Mistake:** Page-side helpers like `const pick = (v) => ...` inside an evaluate callback made every evaluate throw `__name is not defined`; a `.catch(() => null)` turned it into silently missing data (no account names were read).
+**Root cause:** tsx/esbuild `keepNames` wraps named functions with a `__name()` helper that exists in Node, not in the page.
+**Rule:** Keep evaluate callbacks to plain expressions and loops, or pass a string script; do helper work on the Node side. Never swallow an evaluate error without logging it once.
+**Seen:** 1

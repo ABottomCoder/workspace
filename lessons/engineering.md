@@ -151,3 +151,21 @@ Concrete technical traps in code, data, builds, deploys and infrastructure, with
 **Root cause:** The runtime (tool loop, MCP, agent loop) was conflated with the model behind it, which distorts estimates and trade-offs.
 **Rule:** A named CLI or tool means the framework; a named model or API means the model. If it's ambiguous, offer three options (swap the framework, swap the model, or both) and estimate each separately.
 **Seen:** 1
+
+### A shared HTTP agent's timeouts silently cap every caller's timeout
+**Mistake:** A fetch helper took a per-call `timeoutMs`, but the shared HTTP agent behind it fixed `headersTimeout` at 20 s. Every call that legitimately waits longer for response headers (a sidecar that answers after minutes of work; callers configured for 30, 60, 120 s) died at 20 s with a generic "fetch failed", and the retries that followed made it worse.
+**Root cause:** Two timeout layers; the tighter, hidden one wins, and its error names neither layer.
+**Rule:**
+- One owner per timeout: the caller's per-call limit is the real one; agent-level header/body timeouts are a generous backstop only.
+- When a call fails with a timeout, find which layer fired (the error class says: e.g. `HeadersTimeoutError` from the agent, not the caller's abort) before changing the caller's number.
+- Grep every caller that passes a longer timeout than the agent default: they were all capped.
+**Seen:** 1
+
+### A retry after an irreversible step must look, never redo
+**Mistake:** A publish that clicked "post" and then timed out ended as `failed`; a failed row can be retried, and a retry would click again: a possible duplicate post. Separately, a worker restarted mid-publish left the row in `publishing` with nothing to pick it up.
+**Root cause:** The outcome model had "succeeded" and "failed" but not "may have happened"; the sweep only looked at queued rows.
+**Rule:**
+- Record the point of no return before crossing it; any failure after it is *uncertain*, settled by looking the result up, and never retried blindly.
+- Read the provider's own answer to the irreversible request when you can: it turns "uncertain" into a definite yes (with the id) or a definite no (with the reason).
+- A sweep must also pick up work stuck in its in-flight state past a timeout, and hand it to the same look-before-redo path.
+**Seen:** 1
