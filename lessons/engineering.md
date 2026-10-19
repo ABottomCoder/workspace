@@ -141,10 +141,10 @@ Concrete technical traps in code, data, builds, deploys and infrastructure, with
 **Seen:** 1
 
 ### Keep a generator's inputs as separate persisted files
-**Mistake:** An invoice render script held its data inline, so editing it for the next invoice destroyed the previous input, which later had to be rebuilt from the sent PDF.
-**Root cause:** The script was both program and data, and programs get edited.
-**Rule:** For scripts that run repeatedly and produce output that is sent out, store each input as its own file (for example, `invoices/<name>.json`) that the script reads. After you refactor a generator, re-render an already-shipped artifact and diff it against the original; a new output only proves the program runs.
-**Seen:** 1
+**Mistake:** An invoice render script held its data inline, so editing it for the next invoice destroyed the previous input, which later had to be rebuilt from the sent PDF. Later, a script that re-inserts a generated block into a document wiped a note that had been hand-added inside that block, and a stale call left in another generator overwrote newer output with an old version.
+**Root cause:** The script was both program and data, and programs get edited. Anything that lives only in a generator's output, or that an old code path still writes, is lost on the next run.
+**Rule:** For scripts that run repeatedly and produce output that is sent out, store each input as its own file (for example, `invoices/<name>.json`) that the script reads. Never hand-edit inside a region a script regenerates: put the text into the generator's input. When a generator changes its output format, delete the old write path rather than leaving it callable. After you refactor or re-run a generator, re-render an already-shipped artifact and diff it against the original, and scan the output for markers of the old version; a new output only proves the program runs.
+**Seen:** 2
 
 ### An agent framework is not the model
 **Mistake:** A request to adopt another agent CLI was described as "switching the LLM model".

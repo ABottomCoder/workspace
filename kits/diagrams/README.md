@@ -35,6 +35,12 @@ There is no single industry standard; the C4 model is the most widely used vendo
   carries `data-kind` / `data-bbox` for the machine check.
 - Choose the shape by **process role**, not by "has a disk": a node you design that actively calls others
   (broker, data node, replica) is a `service`; a store that is read and written gets a storage shape.
+- **Entry tier, drawn the same way everywhere:** the load balancer is always its own `lb` hexagon in front of the
+  tier it balances (client → LB → app tier); never merge it into a box ("LB + web") and never fold it into a label
+  ("behind LB"). Give the stateless HTTP application tier **one name across the whole document set** (for example
+  "API servers"; sources often switch between "web servers" and "API servers" for the same tier, and "web" also
+  means browser clients). An **API gateway** that only routes, authenticates and rate-limits in front of several
+  services is a different component (also a hexagon) and keeps its own name.
 
 ## 2. Arrow semantics (all diagrams)
 
@@ -62,6 +68,8 @@ There is no single industry standard; the C4 model is the most widely used vendo
   "unspecified; typical choice".
 - **Control plane and data plane are two hops** (get address/credentials, then move bytes), never one arrow.
 - Number the paths: main write W1…, main read R1… (or colour per path + ①②③).
+- **One name per component across diagrams and text.** When a source names the same thing differently in
+  different places, pick one name, use it everywhere, and state the mapping once in the legend.
 
 ## 4. Explanatory material: the three-diagram method (when needed)
 
@@ -94,4 +102,8 @@ Pure engineering design docs need only diagram 2 plus the storage-choice table.
   `stroke-width` as a box width and always reported 0, and several agents used that 0 as proof;
   `lessons/verification.md`).
 - For batch output from several agents, scan deliverables for markers of the old version before delivery, so a
-  stale generator call has not overwritten new diagrams.
+  stale generator call has not overwritten new diagrams. Never hand-edit inside a block a script re-inserts (legend
+  captions, storage-choice tables): put the text into the script, or the next run silently drops it
+  (`lessons/engineering.md`, generator inputs).
+- Naming check: grep diagram labels and text for merged entry boxes ("LB +", "behind LB") and for the alternative
+  names of the app tier; the result should be empty apart from the legend's mapping note.
