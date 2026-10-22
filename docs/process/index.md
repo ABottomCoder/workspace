@@ -14,7 +14,7 @@ How work moves from request to done. The tier (light by default, heavy opt-in) i
 | [intervention-tracking.md](intervention-tracking.md) | `// fix:[category]` autonomy measurement, taxonomy, scan-based mode | ticket close in heavy tier; periodic self-review |
 | [multi-agent-harness.md](multi-agent-harness.md) | Author ↔ critics harness: design, run, verify, scanner interface | the user explicitly asks for the harness |
 | [data-verification.md](data-verification.md) | Answer data questions by measuring: access, standing read-only authorisation, PII, query traps | any question about what data contains, or "I'd need prod access" |
-| [branching-and-merge.md](branching-and-merge.md) | Git Flow roles, merge method per PR type, what makes a useful repo row | release/branch/merge questions; choosing a PR base |
+| [branching-and-merge.md](branching-and-merge.md) | Git Flow roles, merge method per PR type, writing the PR description, what makes a useful repo row | release/branch/merge questions; choosing a PR base; writing a PR |
 
 ## Ticket-system adapters
 

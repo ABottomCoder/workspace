@@ -22,10 +22,10 @@ Entries are ordered by Seen.
 - [data-and-production](data-and-production.md) (18) — restarts, migrations, destructive ops, backups, production data and environments
 - [communication](communication.md) (16) — writing for the reader, threads, reports, client promises, user-facing copy
 - [multi-session-and-bots](multi-session-and-bots.md) (12) — parallel sessions and chat bots: identities, listeners, shared files, message delivery
-- [git-and-release](git-and-release.md) (13) — reviews, PRs, branches, destructive git, deploy and CI proof
+- [git-and-release](git-and-release.md) (14) — reviews, PRs, branches, destructive git, deploy and CI proof
 - [planning-and-scope](planning-and-scope.md) (12) — estimates, scope discipline, plans as checkable claims, design trade-offs
 - [authority-and-approval](authority-and-approval.md) (7) — who may authorise what, identity of approvers, delegation
 - [context-and-memory](context-and-memory.md) (7) — subagents, knowledge routing, docs vs memory, self-review
 - [secrets-and-safety](secrets-and-safety.md) (6) — credentials handling, publication channels, redaction, privilege
 
-Total: 201 entries.
+Total: 202 entries.

@@ -79,3 +79,9 @@ Lessons about branching, pull requests, review, merging, and getting the right c
 **Root cause:** Kept the message short at the cost of the information a later reader needs.
 **Rule:** Every commit message names any strategic-flag flip, any production-affecting behaviour change, and the user-visible problem it addresses. Long bodies are fine; omitting load-bearing facts is not. Code committed before real-runtime validation says "UNVERIFIED + how to verify" in the body.
 **Seen:** 1
+
+### PR descriptions open with a plain summary and are laid out for scanning
+**Mistake:** PR descriptions were dense blocks of detail; the reviewer said they could not tell what the PR was for.
+**Root cause:** Wrote down everything the session knew, in the order it was learned, instead of what a reviewer needs first.
+**Rule:** Start with one or two plain sentences on what the PR does and why, then detail in short headed sections (changes, why, testing, risk, review notes) with bullets and blank lines. Format: `docs/process/branching-and-merge.md` → Writing the PR description. Applies to every PR and to rewrites after review.
+**Seen:** 1

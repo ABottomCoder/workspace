@@ -44,6 +44,25 @@ that preserves ancestry wherever two long-lived branches must stay in sync.
 - Pushing, opening PRs and merging are outward actions: they need authorisation
   ([communication.md](../principles/communication.md#authority-and-approval)).
 
+## Writing the PR description
+
+The reviewer should know what the PR does and why before reading any detail. Write it for someone who
+was not in the session.
+
+1. **Summary first: one or two plain sentences.** What changes for the user or the system, and why.
+   No file names, no jargon the reviewer has to decode.
+2. **Then the detail, in short headed sections**, only the ones that apply:
+   - **Changes**: one bullet per logical change, grouped by area; the file only when it helps.
+   - **Why / context**: the problem, the ticket link, a decision and the alternative rejected.
+   - **How it was tested**: commands run, cases covered, what was not verified (UNVERIFIED).
+   - **Risk and rollout**: migrations, flags, config, anything to do at deploy or to watch after.
+   - **Review notes**: where to look first, anything deliberately left out.
+3. **Layout for scanning.** Headings and bullets, one idea per bullet, blank lines between sections, at
+   most two levels of nesting, code formatting for names and commands. No wall of text and no long
+   paragraphs; if a bullet needs three lines, split it or move the detail to a linked report.
+
+Keep the description current: after review rework, update it (the summary too) rather than appending.
+
 ## What makes a useful repo row (in the business repo table)
 
 - Key entry points at file granularity; non-obvious behaviour inline (a function that mutates shared
