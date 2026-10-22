@@ -53,6 +53,23 @@ its state file. Bound to a ticket: `STATE.md` (≤ 2.5 KB) + `HANDOFF.md` (≤ 3
 `LOG.md` tail as fits. Total ≤ 9.5 KB (the hook output cap is 10 KB). Unbound: a one-line routing
 reminder only.
 
+A ticket's files are shared by every session attached to it; a session only ever reads its own bound
+item. So keep `HANDOFF.md` small (~40 lines, rewritten not appended): restore flags it when it is still
+the empty template, longer than 40 lines, or 10+ LOG entries older than the last LOG line.
+
+- **Sub-items.** `work new-ticket <co> <ID>/<sub> "title"` creates `tickets/<ID>/<sub>/`, a ticket of its
+  own that a session attaches to (`<co>/tickets/<ID>/<sub>`); restore points at the parent instead of
+  inlining it. One level only; `INDEX.md` lists top-level tickets.
+- **Parallel sessions.** `attach` to a ticket that another session is live on (transcript written within
+  `WORK_PARALLEL_MIN`, default 120 min) creates `sessions/<sid8>.md`. That session keeps its in-flight
+  work there instead of in `HANDOFF.md`; restore injects its own note and names the others. When done:
+  merge into `HANDOFF.md`, delete the note.
+- **Pre-compaction snapshot.** `work snapshot` is the PreCompact hook: it writes
+  `user/sessions/.snapshots/<session_id>.md` (time, trigger, and each worktree of the item's repo:
+  branch, HEAD, uncommitted and unpushed counts; repo = the project, or the ticket's `project:` under the
+  same business). Restore after a compaction shows it. It records mechanical state only; the narrative
+  handoff is still written by the session at milestones.
+
 ## STATE.md format
 
 YAML-style front matter, one `key: value` per line, then free Markdown:

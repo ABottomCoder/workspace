@@ -11,15 +11,18 @@
 #   work show                                    what this session is bound to
 #   work index <business>                        regenerate business/<co>/tickets/INDEX.md
 #   work restore                                 SessionStart hook (reads hook JSON on stdin)
+#   work snapshot                                PreCompact hook: git state -> user/sessions/.snapshots/<sid>.md
 #
-# <target>: <business>/<project> | <business>/tickets/<ID> | user/work/<slug>  (a leading
-# "business/" is accepted). Omitted <target> = the item this session is bound to.
+# <target>: <business>/<project> | <business>/tickets/<ID>[/<sub>] | user/work/<slug>[/<sub>]  (a
+# leading "business/" is accepted). Omitted <target> = the item this session is bound to.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="${WORK_ROOT:-$(cd "$HERE/../.." && pwd)}"        # WORK_ROOT: tests only
 . "$HERE/../lib/cc-internals.sh"
 BIND="$ROOT/user/sessions/.bindings"
 LOG_LIMIT="${WORK_LOG_LIMIT:-300}"
+SNAP="$ROOT/user/sessions/.snapshots"
+PARALLEL_MIN="${WORK_PARALLEL_MIN:-120}"   # another session bound to the same ticket counts as live if its transcript moved this recently
 die() { echo "work: $*" >&2; exit 1; }
 stamp() { date -u +%Y-%m-%dT%H:%MZ; }
 today() { date +%Y-%m-%d; }
@@ -31,7 +34,7 @@ resolve() {
   case "$t" in ""|/*|*..*) die "bad target '$1'";; esac
   case "$t" in
     user/work/*)   REL="$t"; KIND=ticket ;;
-    */tickets/*/*) die "bad target '$1'" ;;
+    */tickets/*/*/*) die "bad target '$1' (sub-items are one level deep)" ;;
     */tickets/*)   REL="business/$t"; KIND=ticket ;;
     */*/*)         die "bad target '$1' (use <business>/<project> or <business>/tickets/<ID>)" ;;
     */*)           REL="business/$t"; KIND=project ;;
@@ -41,6 +44,17 @@ resolve() {
 }
 
 sid() { cc_current_session_id "$(cc_transcript_dir "$ROOT")"; }
+
+live_peers() {   # $1 own session id, $2 target REL: short ids of other sessions bound to it whose transcript moved within PARALLEL_MIN
+  local f o tdir out=""; tdir=$(cc_transcript_dir "$ROOT")
+  [ -d "$BIND" ] || return 0
+  for f in "$BIND"/*; do
+    [ -f "$f" ] || continue; o=$(basename "$f"); [ "$o" = "$1" ] && continue
+    [ "$(sed -n 's/^target=//p' "$f" | head -1)" = "$2" ] || continue
+    [ -n "$(find "$tdir/$o.jsonl" -mmin -"$PARALLEL_MIN" 2>/dev/null)" ] && out="$out${out:+ }${o:0:8}"
+  done
+  printf '%s' "$out"
+}
 
 bound() {   # print the bound target of this session, or fail
   local s; s=$(sid) || return 1
@@ -123,6 +137,13 @@ cmd_attach() {
   else
     [ -d "$DIR" ] || die "no ticket dir $REL (work new-ticket ...)"
     echo "$(stamp) session ${s:0:8} attached" >> "$DIR/LOG.md"
+    local others; others=$(live_peers "$s" "$REL")
+    if [ -n "$others" ] && [ ! -f "$DIR/sessions/${s:0:8}.md" ]; then
+      mkdir -p "$DIR/sessions"
+      printf '# Session %s note (%s)\n\nParallel with: %s. Keep this session'"'"'s in-flight work here, not in HANDOFF.md.\nWhen done: merge what still matters into HANDOFF.md, then delete this file.\n\n- In flight:\n- Next:\n' \
+        "${s:0:8}" "$(stamp)" "$others" > "$DIR/sessions/${s:0:8}.md"
+      echo "parallel session(s) on this ticket: $others -> your note: $REL/sessions/${s:0:8}.md"
+    fi
   fi
   mkdir -p "$BIND"; printf 'target=%s\nattached=%s\n' "$REL" "$(stamp)" > "$BIND/$s"
   local desc; desc=$(basename "$REL" | tr '_ ' '--')
@@ -133,12 +154,14 @@ cmd_attach() {
 cmd_new_ticket() {
   local b="${1:-}" id="${2:-}" title="${3:-}" project="${4:-}"
   [ -n "$b" ] && [ -n "$id" ] && [ -n "$title" ] || die "usage: work new-ticket <business> <ID> \"title\" [project]"
-  case "$id" in */*|.*|*" "*) die "ID must not contain '/', spaces or start with '.'";; esac
+  # One optional sub-level ("26AUG-p0/274") splits a batch ticket so a session attaches to its part only.
+  case "$id" in */*/*|.*|*/.*|/*|*/|*" "*) die "ID must not contain spaces, start with '.', or nest deeper than <ID>/<sub>";; esac
   local d rel
   if [ "$b" = user ]; then rel="user/work/$id"; else
     [ -d "$ROOT/business/$b" ] || die "no business dir business/$b"; rel="business/$b/tickets/$id"; fi
   d="$ROOT/$rel"
   [ -e "$d" ] && die "ticket exists: $rel"
+  case "$id" in */*) [ -d "$(dirname "$d")" ] || die "no parent ticket $(dirname "$rel")";; esac
   mkdir -p "$d/history" "$d/reports" "$d/evidence"
   local tpl="$ROOT/templates/ticket" f
   for f in STATE.md LOG.md HANDOFF.md; do
@@ -304,9 +327,9 @@ cmd_restore() {
     exit 0
   fi
   resolve "$target"
-  python3 - "$ROOT" "$REL" "$KIND" "$src" <<'PY'
-import json, os, sys
-root, rel, kind, src = sys.argv[1:5]
+  python3 - "$ROOT" "$REL" "$KIND" "$src" "$s" "$SNAP" <<'PY'
+import json, os, re, sys, datetime
+root, rel, kind, src, sid, snapdir = sys.argv[1:7]
 d = os.path.join(root, rel)
 read = lambda p: open(p, encoding="utf-8", errors="replace").read() if os.path.exists(p) else ""
 BUDGET = 9500                                   # additionalContext is capped at 10,000 chars
@@ -319,25 +342,102 @@ head = (f"[work restore on {src or 'session start'}] This session is attached to
         + (f"Business rules: {biz}. " if biz else "")
         + ("Keep the project state file current (state, TODO, change log: `tools/work/log \"…\"`).\n\n" if kind == "project"
            else "Keep logging: `tools/work/log \"…\"`; refresh HANDOFF.md at milestones.\n\n"))
+# PreCompact snapshot of this session (git state at compaction), only right after a compaction.
+snap = read(os.path.join(snapdir, sid + ".md")).strip() if src == "compact" and sid else ""
+snap = ("## Pre-compaction snapshot (this session)\n" + cut(snap, 1200, f"user/sessions/.snapshots/{sid}.md") + "\n\n") if snap else ""
 if kind == "project":
     if os.path.exists(os.path.join(d, "CLAUDE.md")): head += f"Project knowledge: {rel}/CLAUDE.md.\n\n"
     sf = next((f for f in ("DEVDOC.md", ".state/DEVDOC.md", "docs/HANDOFF.md") if os.path.exists(os.path.join(d, f))), "DEVDOC.md")
-    body = head + f"## {sf}\n" + cut(read(os.path.join(d, sf)), BUDGET - len(head) - 20, f"{rel}/{sf}")
+    body = head + snap + f"## {sf}\n" + cut(read(os.path.join(d, sf)), BUDGET - len(head) - len(snap) - 20, f"{rel}/{sf}")
 else:
-    state = cut(read(os.path.join(d, "STATE.md")).strip(), 2500, f"{rel}/STATE.md")
-    handoff = cut(read(os.path.join(d, "HANDOFF.md")).strip(), 3000, f"{rel}/HANDOFF.md")
+    pd = os.path.dirname(d)   # a sub-item (<ID>/<sub>) points at its parent instead of inlining it
+    if os.path.basename(pd) not in ("tickets", "work") and os.path.exists(os.path.join(pd, "STATE.md")):
+        head += f"Sub-item of {os.path.relpath(pd, root)}: read its HANDOFF.md only for batch-wide facts.\n\n"
+    raw = read(os.path.join(d, "HANDOFF.md")).strip()
+    warn = []
+    if re.search(r"<3.6 bullets|<the literal next|<UTC time>", raw):
+        warn.append("HANDOFF.md is still the empty template: fill it at the next milestone")
+    elif raw.count("\n") + 1 > 40:
+        warn.append(f"HANDOFF.md is {raw.count(chr(10)) + 1} lines: rewrite it short (Resume here ~20 lines), do not append")
     log = read(os.path.join(d, "LOG.md")).rstrip("\n").split("\n")
-    room = BUDGET - len(head) - len(state) - len(handoff) - 200
+    if raw and not warn:
+        hm = datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(d, "HANDOFF.md")), datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+        newer = sum(1 for l in log if re.match(r"\d{4}-\d\d-\d\dT\d\d:\d\dZ ", l) and l[:17] > hm)
+        if newer >= 10: warn.append(f"{newer} LOG entries since HANDOFF.md was written: refresh it")
+    if warn: head += "Handoff check: " + "; ".join(warn) + ".\n\n"
+    note, others = "", []
+    sd = os.path.join(d, "sessions")
+    if os.path.isdir(sd):
+        mine = sid[:8] + ".md"
+        if os.path.exists(os.path.join(sd, mine)):
+            note = "## Your session note (sessions/" + mine + ")\n" + cut(read(os.path.join(sd, mine)).strip(), 1500, f"{rel}/sessions/{mine}") + "\n\n"
+        others = sorted(f for f in os.listdir(sd) if f.endswith(".md") and f != mine)
+    if others: head += "Other sessions' notes (parallel work, read if it touches yours): " + ", ".join(f"{rel}/sessions/{f}" for f in others) + "\n\n"
+    state = cut(read(os.path.join(d, "STATE.md")).strip(), 2500, f"{rel}/STATE.md")
+    handoff = cut(raw, 3000, f"{rel}/HANDOFF.md")
+    room = BUDGET - len(head) - len(snap) - len(note) - len(state) - len(handoff) - 200
     tail, used = [], 0
     for line in reversed(log):
         if used + len(line) + 1 > room: break
         tail.append(line); used += len(line) + 1
     tail.reverse()
     skipped = len(log) - len(tail)
-    body = (head + "## STATE.md\n" + state + "\n\n## HANDOFF.md\n" + handoff + f"\n\n## LOG.md (last {len(tail)} lines"
+    body = (head + snap + note + "## STATE.md\n" + state + "\n\n## HANDOFF.md\n" + handoff + f"\n\n## LOG.md (last {len(tail)} lines"
             + (f"; {skipped} earlier lines in the file" if skipped else "") + ")\n" + "\n".join(tail))
 print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": body[:BUDGET]}}))
 PY
+}
+
+# PreCompact hook: record the mechanical state (time, trigger, git worktrees of the item's repo)
+# per session, so restore can show it after compaction. Never blocks compaction; prints nothing.
+cmd_snapshot() {
+  local input s trig target repo=""
+  input=$(cat)
+  s=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("session_id",""))' 2>/dev/null)
+  trig=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("trigger",""))' 2>/dev/null)
+  [ -n "$s" ] && [ -f "$BIND/$s" ] || exit 0
+  target=$(sed -n 's/^target=//p' "$BIND/$s" | head -1)
+  ( resolve "$target" ) >/dev/null 2>&1 || exit 0
+  resolve "$target"
+  if [ "$KIND" = project ]; then repo="$DIR"; else
+    local p f
+    for f in "$DIR/STATE.md" "$(dirname "$DIR")/STATE.md"; do
+      p=$(sed -n 's/^project:[[:space:]]*\([^ #]*\).*/\1/p' "$f" 2>/dev/null | head -1)
+      case "$p" in ""|none|"<"*) continue ;; esac
+      repo="$ROOT/business/$(echo "$REL" | cut -d/ -f2)/$p"; break
+    done
+  fi
+  mkdir -p "$SNAP"
+  python3 - "$ROOT" "$REL" "$repo" "$trig" "$SNAP/$s.md" <<'PY' || true
+import os, subprocess, sys, datetime
+root, rel, repo, trig, out = sys.argv[1:6]
+read = lambda p: open(p, encoding="utf-8", errors="replace").read() if os.path.exists(p) else ""
+d = os.path.join(root, rel)   # branches this item names (STATE, HANDOFF, recent LOG) come first
+named = read(os.path.join(d, "STATE.md")) + read(os.path.join(d, "HANDOFF.md")) + "\n".join(read(os.path.join(d, "LOG.md")).splitlines()[-80:])
+git = lambda wd, *a: subprocess.run(["git", "-C", wd, *a], capture_output=True, text=True, timeout=5).stdout.strip()
+now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+lines = [f"- {now} compaction ({trig or 'unknown trigger'}) of {rel}"]
+if repo and os.path.isdir(repo) and git(repo, "rev-parse", "--git-dir"):
+    rows = []
+    for blk in git(repo, "worktree", "list", "--porcelain").split("\n\n"):
+        kv = dict((l.split(" ", 1) + [""])[:2] for l in blk.splitlines() if l)
+        wt = kv.get("worktree")
+        if not wt or not os.path.isdir(wt): continue
+        dirty = len([l for l in git(wt, "status", "--porcelain").splitlines() if l])
+        ab = git(wt, "rev-list", "--left-right", "--count", "@{u}...HEAD").split()
+        ahead = int(ab[1]) if len(ab) == 2 else None
+        br = kv.get("branch", "").replace("refs/heads/", "")
+        mine = bool(br) and br in named
+        if not mine and not dirty and not ahead: continue   # clean and unrelated: noise
+        rows.append((not mine, f"- {'*' if mine else ''}{os.path.relpath(wt, root)}: {kv.get('branch', 'detached').replace('refs/heads/', '')} "
+                     f"@ {kv.get('HEAD', '')[:8]}" + (f", {dirty} uncommitted" if dirty else "")
+                     + (f", {ahead} unpushed" if ahead else "") + (", no upstream" if ahead is None else "")))
+    rows.sort(key=lambda r: r[0])
+    if any(not r[0] for r in rows): lines.append("- (* = branch named in this work item)")
+    lines += [r[1] for r in rows[:12]] + ([f"- …{len(rows) - 12} more worktrees"] if len(rows) > 12 else [])
+open(out, "w", encoding="utf-8").write("\n".join(lines) + "\n")
+PY
+  exit 0
 }
 
 c="${1:-}"; shift || true
@@ -349,5 +449,6 @@ case "$c" in
   show) cmd_show ;;
   index) cmd_index "$@" ;;
   restore) cmd_restore ;;
-  *) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  snapshot) cmd_snapshot ;;
+  *) sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

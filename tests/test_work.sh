@@ -79,6 +79,46 @@ test_ticket_flow() {
   bash "$W" index co >/dev/null; assert_contains "$(cat "$R/business/co/tickets/INDEX.md")" "T-1"
 }
 
+test_sub_ticket_points_at_parent() {
+  setup
+  bash "$W" new-ticket co B-1 "batch" >/dev/null; bash "$W" new-ticket co B-1/274 "part" >/dev/null
+  assert_file "$R/business/co/tickets/B-1/274/STATE.md"
+  out=$(bash "$W" new-ticket co B-9/1 "orphan" 2>&1); assert_contains "$out" "no parent ticket"
+  bash "$W" attach co/tickets/B-1/274 >/dev/null
+  out=$(restore); assert_contains "$out" "Sub-item of business/co/tickets/B-1"; assert_contains "$out" "B-1/274"
+  bash "$W" index co >/dev/null; assert_not_contains "$(cat "$R/business/co/tickets/INDEX.md")" "274"
+}
+
+test_restore_flags_template_and_long_handoff() {
+  setup; bash "$W" new-ticket co T-2 "t" >/dev/null; bash "$W" attach co/tickets/T-2 >/dev/null
+  assert_contains "$(restore)" "still the empty template"
+  seq 60 > "$R/business/co/tickets/T-2/HANDOFF.md"
+  assert_contains "$(restore)" "HANDOFF.md is 60 lines"
+}
+
+test_parallel_session_gets_note() {
+  setup; export CC_PROJECTS_BASE="$R/cc"; tdir=$(bash "$REPO/tools/lib/cc-internals.sh" transcript_dir "$R"); mkdir -p "$tdir"
+  bash "$W" new-ticket co T-3 "t" >/dev/null
+  first=$CLAUDE_CODE_SESSION_ID; bash "$W" attach co/tickets/T-3 >/dev/null; touch "$tdir/$first.jsonl"
+  assert_no_file "$R/business/co/tickets/T-3/sessions/${first:0:8}.md"
+  export CLAUDE_CODE_SESSION_ID="peer-$RANDOM"; out=$(bash "$W" attach co/tickets/T-3)
+  assert_contains "$out" "parallel session"; assert_file "$R/business/co/tickets/T-3/sessions/${CLAUDE_CODE_SESSION_ID:0:8}.md"
+  assert_contains "$(restore)" "Your session note"
+  export CLAUDE_CODE_SESSION_ID="$first"; assert_contains "$(restore)" "Other sessions' notes"
+  unset CC_PROJECTS_BASE
+}
+
+test_snapshot_then_restore() {
+  setup; mkdir -p "$R/business/co/p"; git -C "$R/business/co/p" init -q; echo x > "$R/business/co/p/f"
+  bash "$W" new-ticket co T-4 "t" p >/dev/null; bash "$W" attach co/tickets/T-4 >/dev/null
+  printf '{"session_id":"%s","trigger":"auto"}' "$CLAUDE_CODE_SESSION_ID" | bash "$W" snapshot
+  snap="$R/user/sessions/.snapshots/$CLAUDE_CODE_SESSION_ID.md"; assert_file "$snap"
+  assert_contains "$(cat "$snap")" "(auto)"; assert_contains "$(cat "$snap")" "1 uncommitted"
+  assert_contains "$(restore)" "Pre-compaction snapshot"
+  assert_not_contains "$(printf '{"session_id":"%s","source":"startup"}' "$CLAUDE_CODE_SESSION_ID" | bash "$W" restore)" "Pre-compaction snapshot"
+  assert_eq "$(printf '{"session_id":"nobody","trigger":"auto"}' | bash "$W" snapshot; echo $?)" 0 "unbound is a no-op"
+}
+
 test_restore_unattached() {
   setup; assert_contains "$(printf '{"session_id":"nobody","source":"startup"}' | bash "$W" restore)" "Not attached"
 }

@@ -15,6 +15,13 @@
         ]
       }
     ],
+    "PreCompact": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/tools/work/work\" snapshot", "timeout": 15, "statusMessage": "Snapshotting work item" }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
