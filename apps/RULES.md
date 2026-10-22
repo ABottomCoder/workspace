@@ -54,7 +54,7 @@ them by file name only.
   to say whether it happened, if it weren't written down?"
 - Never answer whether you did something from memory — compaction drops detail. Check LOG.md, git
   or the chat history first.
-- Refresh `HANDOFF.md` at milestones and before stopping (`app handoff` first).
+- Refresh the app's `handoff/<id>.md` in the ticket at milestones and before stopping, then `app handoff`.
 - When a ticket is done, publish its summary where the team can read it.
 
 ## 9. Apps talking to apps

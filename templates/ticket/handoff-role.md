@@ -1,9 +1,11 @@
-# <id>: <title> [STATUS: in-progress | blocked | testing | review]
+# <id>: <title> (role: <role>)
+
+**Status:** <one line: in-progress | blocked | testing | review, and what it waits on>
 
 > **Written:** <UTC time> · **Session:** <ShortDesc>_<app>_<n>
-> Every session attached here reads this file on start and after compaction, so keep it to about
-> 40 lines: rewrite it (`tools/work/handoff` archives the old one), never append. History lives in
-> LOG.md, detail in reports/ and evidence/; point at them instead of copying.
+> This role's resume point. Only sessions with this role edit it; edit in place (keep what is still
+> true, drop what is not), then run `tools/work/handoff` to archive a copy and rebuild the index.
+> About 40 lines: history lives in LOG.md, detail in reports/ or handoff/<role>/<topic>.md, linked.
 
 ## Resume here
 

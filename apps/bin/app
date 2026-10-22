@@ -14,7 +14,7 @@
 #   app inbox <id>                         every event received since the last call
 #   app work <id> <ticket> [--title "…"] [--depends t1,t2]   bind the app to a business ticket
 #   app log <id> "text"                    append to the current ticket's LOG.md
-#   app handoff <id>                       archive the ticket's HANDOFF.md, start a fresh one
+#   app handoff <id>                       the app's handoff file in the ticket (handoff/<id>.md): create or archive a copy
 #   app close <id>                         mark the current ticket closed
 #   app name-session <id> <Desc>           name this session <Desc>_<channel>_<name>_<n>
 #   app install-service <id> | uninstall-service <id>   (service.<platform>.sh; only on request)
@@ -174,7 +174,7 @@ cmd_work() {
   valid_ticket "$t"; local title="" deps=""
   while [ $# -gt 0 ]; do case "$1" in --title) title=${2:-}; shift 2;; --depends) deps=${2:-}; shift 2;; *) die "unknown arg $1";; esac; done
   local d; d=$(ticket_dir "$t"); local tw; tw=$(work_tool attach)
-  [ -n "$tw" ] && "$tw" "$APP_CO/tickets/$t" >/dev/null
+  [ -n "$tw" ] && "$tw" "$APP_CO/tickets/$t" --role "$(printf '%s' "$APP_ID" | tr 'A-Z' 'a-z')" >/dev/null   # the app is a role: its handoff is handoff/<id>.md
   if [ ! -f "$d/STATE.md" ]; then   # fallback when tools/work is absent: create the ticket dir directly
     mkdir -p "$d"/{reports,evidence,history}
     local f; for f in STATE.md LOG.md HANDOFF.md; do

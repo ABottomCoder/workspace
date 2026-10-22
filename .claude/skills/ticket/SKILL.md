@@ -16,7 +16,8 @@ Format of `STATE.md` and the commands: `tools/work/README.md`.
 | **log** | `bash tools/work/log "<one line>"` (bound item) or `bash tools/work/log <co>/tickets/<ID> "..."`. Log changes, decisions + why, messages sent, failures, findings; not files read or raw output. |
 | **status** | Edit `status:` in `STATE.md` front matter (`open → active → review → closed`, or `blocked`), log the change, re-run `index`. |
 | **handoff** | Use the `handoff` skill. |
-| **close** | Verify the acceptance criteria with evidence (`reports/`, `evidence/`). Set `status: closed` and `closed: <date>` in `STATE.md`, log a closing line (what shipped, where), refresh `HANDOFF.md` to a final summary, run `index`. Heavy-tier businesses: also the ticket-system comment and reports per `docs/process/heavy-track.md`. |
+| **close** | Verify the acceptance criteria with evidence (`reports/`, `evidence/`). Log a closing line (what shipped, where), refresh your `handoff/<role>.md` to a final summary, then `bash tools/work/work close <co>/tickets/<ID>` (sets `status: closed` + `closed:`, moves the dir to `tickets/_archive/<ID>`, rebinds sessions; `reopen` moves it back), run `index`. Heavy-tier businesses: also the ticket-system comment and reports per `docs/process/heavy-track.md`. |
+| **rename** | `bash tools/work/work rename <target> <new ID or target>` (e.g. an unrouted `user/work/s-<sid8>` once its subject is known): moves the dir and rebinds its sessions. |
 | **index** | `bash tools/work/index <co>` regenerates `business/<co>/tickets/INDEX.md`. Never edit it by hand. |
 
 Never answer "did I do X on this ticket?" from memory: check `LOG.md`, git, or the conversation.

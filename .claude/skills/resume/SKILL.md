@@ -17,7 +17,9 @@ argument-hint: "[<business>/<project> | <business>/tickets/<ID> | user/work/<slu
 ## 2. Bind and read
 
 `bash tools/work/attach <target>` (skip if already bound), then read fully: ticket `STATE.md`,
-`HANDOFF.md` (resume-here and verified facts first), the `LOG.md` tail; or the project state file (`tools/work/show`)
+your role's `handoff/<role>.md` (the role is in the binding, default `main`; `HANDOFF.md` is the index of
+roles), the `LOG.md` tail; an archived item (`tickets/_archive/<ID>`) can be attached as is, or
+`tools/work/work reopen` it; or the project state file (`tools/work/show`)
 (and its `## Session handoff` section after a rollover). Read linked reports only if you need that depth.
 
 ## 3. Re-establish ground truth

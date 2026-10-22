@@ -27,10 +27,11 @@ mkdir -p "$STATE"
 date > "$STATE/$sid.triggered"
 
 mb=$((size / 1024 / 1024))
+target=$(bound_target "$sid"); new=""
+[ -n "$target" ] || { target=$(bind_unrouted "$sid") && new=" This session was not attached, so it now is: ${target} (named after the session id). If you know what it is, rename it first: \`bash tools/work/work rename ${target} <co>/tickets/<ID> | user/work/<slug>\`, then use the new path in the steps below."; }
 h=$(handoff_path "$sid")
-target=$(bound_target "$sid")
 case "$h" in
-  */HANDOFF.md) how="First run \`bash tools/work/handoff ${target}\` (archives the current one), then fill the fresh $h." ;;
+  */handoff/*.md) how="Edit your role's file $h in place (run \`bash tools/work/handoff ${target}\` first if it does not exist yet), then run \`bash tools/work/handoff ${target}\` to archive a copy and rebuild the index.${new}" ;;
   */DEVDOC.md|*/docs/HANDOFF.md)  how="Update $h: state, active work, TODO, and a \`## Session handoff\` section (replace any older one)." ;;
   *)            how="Write it to $h (this session is not attached to a work item)." ;;
 esac

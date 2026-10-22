@@ -9,6 +9,7 @@ sid=${1:-}; tp=${2:-}; fallback=${3:-}
 h=$(handoff_path "$sid")
 trig="$STATE/$sid.triggered"
 [ -s "$h" ] || { echo "FAIL: handoff missing or empty: $h"; exit 1; }
+! grep -Eq '<the literal next|<3.6 bullets' "$h" || { echo "FAIL: handoff is still the empty template: $h"; exit 1; }
 [ ! -e "$trig" ] || [ "$h" -nt "$trig" ] || { echo "FAIL: handoff not updated since the rollover fired: $h"; exit 1; }
 old_pid=$(cc_find_pid) || { echo "FAIL: cannot find the current claude process"; exit 1; }
 

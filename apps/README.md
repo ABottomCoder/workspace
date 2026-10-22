@@ -67,13 +67,13 @@ Requirements: Node 20+, bash, python3, `lsof`, `pgrep`. First time: `cd apps && 
 - Reply: `app send <id> --conv <c> --thread <ts> --file msg.txt` (or `--stdin`; `--upload <path>` for
   files). Answer in the thread the message came from.
 - Ack before long work, progress, result — `RULES.md` §4.
-- Log as you go: `app log <id> "…"` (the current ticket's `LOG.md`); refresh `HANDOFF.md` at
-  milestones (`app handoff <id>` first). Durable context goes into the ticket dir, not the app dir.
+- Log as you go: `app log <id> "…"` (the current ticket's `LOG.md`); refresh the app's
+  handoff at milestones: `handoff/<id>.md` in the ticket (the app is a role; `app handoff <id>` creates it). Durable context goes into the ticket dir, not the app dir.
 - Switching ticket mid-session: write the handoff first, then `app work <id> <other>`.
 
 ## Stop
 
-1. `app handoff <id>`, fill the new `HANDOFF.md` (done, in progress, waiting on, promised, next step).
+1. Update `handoff/<id>.md` in the ticket (done, in progress, waiting on, promised, next step), then `app handoff <id>`.
 2. Ticket finished? `app close <id>`, then publish a summary where the team reads it.
 3. `app down <id>` (skip when only compacting).
 

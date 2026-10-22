@@ -12,10 +12,13 @@ Do it right away, without asking the user:
    project state-file change log), lessons, memory pointers. The handoff points at them instead of
    copying them.
 2. **Write the handoff where the hook says** — into the bound work item:
-   - ticket / `user/work/<slug>`: `tools/work/handoff` (archives the old one), then fill `HANDOFF.md`;
+   - ticket / `user/work/<slug>`: your role's `handoff/<role>.md`, edited in place, then
+     `tools/work/handoff` (creates it if missing, archives a copy, rebuilds the `HANDOFF.md` index);
+     the new session gets the same binding and role, so it continues the same file;
    - project: update its state file (`tools/work/show`: `DEVDOC.md`, `.state/DEVDOC.md` or `docs/HANDOFF.md`)
      (state, active work, TODO) and its `## Session handoff` section;
-   - not attached: `user/sessions/.rollover/<session-id>.handoff.md`.
+   - not attached: the hook first creates and binds `user/work/s-<sid8>` (named after the session
+     id); rename it with `tools/work/work rename` as soon as its subject is known.
 
    Short, but enough for a session with no other context:
    - Role first, if the session has one (e.g. "You run app `slack_example`; take it over per `apps/RULES.md`").

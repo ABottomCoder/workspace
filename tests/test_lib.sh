@@ -55,6 +55,16 @@ test_rollover_handoff_path_follows_state() {
   assert_contains "$out" "business/a/p2/docs/HANDOFF.md" "new in-repo project"
   assert_contains "$out" "business/b/q/DEVDOC.md" "no policy"
   assert_contains "$out" "user/sessions/.rollover/none.handoff.md" "unbound session"
+  printf 'target=business/b/tickets/T-1\nrole=qa\n' > "$d/user/sessions/.bindings/s4"
+  assert_contains "$(. "$d/tools/rollover/lib.sh"; handoff_path s4)" "business/b/tickets/T-1/handoff/qa.md" "ticket role file"
+}
+
+test_rollover_binds_unrouted_session() {
+  d=$(new_tmp); mkdir -p "$d/tools" "$d/user/sessions" "$d/templates"
+  cp -r "$REPO/tools/lib" "$REPO/tools/rollover" "$REPO/tools/work" "$d/tools/"; cp -r "$REPO/templates/ticket" "$d/templates/"
+  out=$(. "$d/tools/rollover/lib.sh"; bind_unrouted 12345678-aaaa; handoff_path 12345678-aaaa)
+  assert_contains "$out" "user/work/s-12345678"; assert_contains "$out" "user/work/s-12345678/handoff/main.md"
+  assert_file "$d/user/work/s-12345678/STATE.md"
 }
 
 run_tests

@@ -15,7 +15,9 @@ not the directory name. Templates: `templates/ticket/`.
 tickets/<ID>/
 ├── STATE.md     status (open/active/review/closed), title, project, AC, branch, PR, dates, links
 ├── LOG.md       append-only: changes, decisions + why, messages sent, failures
-├── HANDOFF.md   current resume point (refreshed at milestones; old ones → history/)
+├── HANDOFF.md   generated index of the roles' resume points (never edited by hand)
+├── handoff/     <role>.md per line of work (main, dev, qa, an app): each role edits only its own;
+│                copies → history/ on `tools/work/handoff`
 ├── spec.md      non-trivial work only: spec → plan → tasks, AC, safety block
 ├── reports/     test-report-v<n>.html, ticket-report.html, qa.md, qa-report.html, review-r<n>.md
 ├── evidence/    screenshots, logs, query files, one-off scripts
@@ -24,7 +26,8 @@ tickets/<ID>/
 
 - `tickets/INDEX.md` is **generated** (`tools/work/index`); never hand-edit it. Read it first during
   intake instead of listing directories; open only the tickets whose rows matter.
-- Nothing is deleted. Closed tickets stay in place.
+- Nothing is deleted. `tools/work/work close` moves a closed ticket to `tickets/_archive/<ID>`
+  (still listed in `INDEX.md`; `reopen` moves it back).
 - Cross-business work uses the same shape under `user/work/<slug>/`.
 - Never store ticket progress in auto-memory; it belongs in the ticket directory.
 
@@ -117,12 +120,12 @@ ticket report (don't rewrite it), push, tell the user the PR is updated.
 
 ## Handoff and resume
 
-- **Save:** verify ground truth (`git status`/`git log` per repo), then refresh `HANDOFF.md`:
+- **Save:** verify ground truth (`git status`/`git log` per repo), then edit your role's `handoff/<role>.md` in place and run `tools/work/handoff`:
   ⭐ resume-here line with the literal next action · verified facts · current state (committed / local
   only / not changed, per repo and branch) · ordered next steps · decisions and why · gotchas · config,
   env vars and secrets needed (by name) · how to test locally, including temporary changes and how to
-  revert them · references. Old handoff → `history/`.
-- **Quality bar:** a fresh session reading only `STATE.md` + `HANDOFF.md` + `LOG.md` tail continues
+  revert them · references. Each `tools/work/handoff` run keeps a copy in `history/`.
+- **Quality bar:** a fresh session reading only `STATE.md` + its `handoff/<role>.md` + `LOG.md` tail continues
   seamlessly: concrete `file:line`, real commands, real branch and commit. Mark anything unproven
   UNVERIFIED. Anything you spent time debugging (wrong field name, startup order, config) must be written
   down so no one debugs it again.

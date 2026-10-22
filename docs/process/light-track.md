@@ -33,7 +33,7 @@ Non-trivial = 3+ steps, an architectural decision, or prod/schema/destructive ri
   know: commits, deploys, files changed, decisions and why, messages sent, failures, findings. Not files
   read or raw output. Test: would someone redo or contradict this, or be unable to tell whether it
   happened, if it weren't written down?
-- **Refresh `HANDOFF.md` at milestones**, not only at the end (`tools/work/handoff`).
+- **Refresh your `handoff/<role>.md` at milestones**, not only at the end (edit in place, then `tools/work/handoff`).
 - **Never answer "did I do X?" from memory**: check `LOG.md`, `git log`, or the conversation.
 - Small one-shot tasks: skip all of this except the daily log line.
 - **Daily log:** after each completed task append one line to `user/logs/YYYYMMDD.log`, prefixed with

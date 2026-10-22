@@ -12,7 +12,8 @@ conversation. Write it so it can carry on as if it never left.
 ## 1. Target
 
 The bound item (`bash tools/work/show`), or `$ARGUMENTS`. Not attached → attach first (`attach`
-skill); if no item fits, create `user/work/<slug>` (`ticket` skill).
+skill); if no item fits yet, create `user/work/s-<first 8 of the session id>` and
+`tools/work/work rename` it once its subject is known.
 
 ## 2. Ground truth first
 
@@ -26,16 +27,16 @@ name, never the value), open threads and the next step.
 
 ## 3. Write
 
-- **Ticket / user work item:** `bash tools/work/handoff` (archives the current `HANDOFF.md` to
-  `history/`), then fill the fresh `HANDOFF.md` (template: resume-here + immediate next action,
-  state per branch / PR, waiting on and promises, decisions and gotchas). Every attached session reads
-  it on start and after compaction, so keep it to about 40 lines: rewrite, never append; history stays
-  in `LOG.md`, detail in `reports/` with a pointer. Keep `STATE.md` (status, links) accurate.
-  A batch ticket can be split: `work new-ticket <co> <ID>/<sub> "title"` makes a sub-item a session
-  attaches to on its own; the parent keeps only batch-wide facts.
-  A session with its own note (`sessions/<sid8>.md`, created when it attached while another session
-  was live on the same ticket) writes its in-flight work there; when it finishes, merge what still
-  matters into `HANDOFF.md` and delete the note.
+- **Ticket / user work item:** the item has one handoff, split by role: `handoff/<role>.md` (your role
+  is in the binding, default `main`; `tools/work/show`). Edit **only your role's file**, in place: keep
+  what is still true, fix what changed, drop what is wrong (template: status line, resume-here +
+  immediate next action, state per branch / PR, waiting on and promises, decisions and gotchas). Then
+  run `bash tools/work/handoff`: it creates the file from the template if missing, keeps a copy in
+  `history/` and rebuilds the generated `HANDOFF.md` index (never edit the index). Restore injects
+  your file in full and only the status line of other roles, so keep it to about 40 lines: history
+  stays in `LOG.md`, detail in `reports/` or `handoff/<role>/<topic>.md` with a pointer. Keep
+  `STATE.md` (status, links) accurate. A batch ticket can be split: `work new-ticket <co> <ID>/<sub>
+  "title"` makes a sub-item a session attaches to on its own; the parent keeps only batch-wide facts.
 - **Project:** update its state file (`bash tools/work/show`; policy in `tools/work/README.md`):
   current state first, active work, TODO / open decisions, and a change-log line
   (`bash tools/work/log "..."`). For a rollover, also a `## Session handoff` section with what only
