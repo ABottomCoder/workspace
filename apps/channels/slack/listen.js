@@ -139,12 +139,14 @@ async function handleEvent(event) {
   const fromPeerBot = !!(event.bot_id && (ALLOW_BOTS.includes(event.bot_id) || (event.user && ALLOW_BOTS.includes(event.user))));
   if (event.bot_id && !fromPeerBot) return;
   if (event.user && event.user === botUserId) return;
-  if (event.subtype && !(fromPeerBot && event.subtype === 'bot_message')) return; // message_changed, message_deleted, channel_join, etc.
+  // file_share = a message with attachments: forwarded like any message (files listed in the event).
+  if (event.subtype && event.subtype !== 'file_share' && !(fromPeerBot && event.subtype === 'bot_message')) return; // message_changed, message_deleted, channel_join, etc.
   if (fromPeerBot && botRateLimited()) return;
 
-  // Shapes per the manifest: app_mention + message.im + message.channels + message.groups.
+  // Shapes per the manifest: app_mention + message.im + message.channels/.groups/.mpim (a group DM
+  // is handled like a private channel: channel_message, gated by APP_LISTEN_CONVS).
   const isDM = event.channel_type === 'im';
-  const isChannelMsg = event.type === 'message' && (event.channel_type === 'channel' || event.channel_type === 'group');
+  const isChannelMsg = event.type === 'message' && ['channel', 'group', 'mpim'].includes(event.channel_type);
   const type = event.type === 'app_mention' ? 'app_mention' : (isDM ? 'dm' : (isChannelMsg ? 'channel_message' : event.type));
   if (type !== 'app_mention' && type !== 'dm' && type !== 'channel_message') return;
 
@@ -184,6 +186,7 @@ async function handleEvent(event) {
     user: event.user,
     user_name,
     text: event.text || '',
+    files: (event.files || []).map((f) => ({ id: f.id, name: f.name, mimetype: f.mimetype, size: f.size })),
     ts: event.ts,
     thread: event.thread_ts || null,
     permalink: link,

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Framework repo pre-commit guard (spec §3.12). Blocks a commit that stages:
+# Framework repo pre-commit guard. Blocks a commit that stages:
 #   - any path under user/, business/ or .staging/
 #   - secret-looking tokens (Slack, GitHub, AWS, private keys, Anthropic, Stripe live)
 #   - absolute home paths (/Users/<name>, /home/<name>)

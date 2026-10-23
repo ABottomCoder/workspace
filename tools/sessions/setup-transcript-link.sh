@@ -1,5 +1,5 @@
 #!/bin/bash
-# Make Claude Code keep this main dir's transcripts inside it (spec §3.6):
+# Make Claude Code keep this main dir's transcripts inside it:
 #   ~/.claude/projects/<encoded main dir>  ->  <main>/user/sessions   (symlink; Windows: junction, tools/lib/link.sh)
 # Idempotent. Refuses when a real non-empty transcript dir exists, unless --merge (moves its
 # entries into user/sessions first; stops on any name clash). --dry-run prints the plan only.

@@ -23,6 +23,7 @@ ROOT="${WORK_ROOT:-$(cd "$HERE/../.." && pwd)}"        # WORK_ROOT: tests only
 . "$HERE/../lib/cc-internals.sh"
 BIND="$ROOT/user/sessions/.bindings"
 LOG_LIMIT="${WORK_LOG_LIMIT:-300}"
+LOG_BYTES="${WORK_LOG_BYTES:-24576}"
 SNAP="$ROOT/user/sessions/.snapshots"
 PARALLEL_MIN="${WORK_PARALLEL_MIN:-120}"   # another session bound to the same ticket counts as live if its transcript moved this recently
 LIB="$HERE/lib_handoff.py"
@@ -222,7 +223,10 @@ cmd_log() {
     printf '%s %s\n' "$(stamp)" "$msg" >> "$DIR/LOG.md"
     touch_state "$DIR"
     local n; n=$(wc -l < "$DIR/LOG.md" | tr -d ' ')
-    [ "$n" -gt "$LOG_LIMIT" ] && echo "work: LOG.md has $n lines (> $LOG_LIMIT). Move older lines to history/log-<date>.md and leave a digest at the top." >&2
+    local b; b=$(wc -c < "$DIR/LOG.md" | tr -d ' ')
+    if [ "$n" -gt "$LOG_LIMIT" ] || [ "$b" -gt "$LOG_BYTES" ]; then
+      echo "work: LOG.md has $n lines / $((b / 1024)) KB (limits $LOG_LIMIT lines, $((LOG_BYTES / 1024)) KB). Move older lines to history/log-<date>.md and leave a digest at the top." >&2
+    fi
   else
     local sf; sf=$(state_file "$DIR") || die "no state file in $REL ($STATE_FILES; work attach creates DEVDOC.md)"
     python3 - "$DIR/$sf" "$(today) $msg" <<'PY'
@@ -420,6 +424,12 @@ else:
         mine = lambda b: b.startswith(tag) if role != "main" else not re.match(r"\[[\w-]+\] |session \w+ attached", b)
         newer = sum(1 for l in log if re.match(r"\d{4}-\d\d-\d\dT\d\d:\d\dZ ", l) and l[:17] > hm and mine(l[18:]))
         if newer >= 10: warn.append(f"{newer} LOG entries of role {role} since {label} was written: refresh it")
+    st = read(os.path.join(d, "STATE.md"))
+    if re.search(r"<ticket ID or kebab slug>|<one line>|<YYYY-MM-DD>|<project dir name", st):
+        warn.append("STATE.md still has template placeholders (id/title/project/opened): fill its front matter")
+    lg = os.path.join(d, "LOG.md")
+    if os.path.exists(lg) and os.path.getsize(lg) > int(os.environ.get("WORK_LOG_BYTES", "24576")):
+        warn.append(f"LOG.md is {os.path.getsize(lg) // 1024} KB: move older lines to history/ and leave a digest")
     if warn: head += "Handoff check: " + "; ".join(warn) + ".\n\n"
     others = [r for r in H.roles(d) if r != role]
     index = ("## Other roles (handoff index; read their file only if it touches your work)\n"

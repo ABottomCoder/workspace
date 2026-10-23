@@ -11,6 +11,7 @@
 #   app down <id>                          stop this session's read end + write end for <id>
 #   app send <id> --conv <c> [--thread <ts>] ("text" | --file <p> | --stdin) [--upload <path>]
 #   app read <id> <conv> [--peek|--reset]  conversation since the cursor (advances it unless --peek)
+#   app fetch-file <id> <file id>…        download files from an event's `files` into .runtime/files/
 #   app inbox <id>                         every event received since the last call
 #   app work <id> <ticket> [--title "…"] [--depends t1,t2]   bind the app to a business ticket
 #   app log <id> "text"                    append to the current ticket's LOG.md
@@ -117,6 +118,7 @@ EOF
     die "$APP_ID is held by session $prev and its read end is running. Stop it there first (app down $APP_ID)."
   fi
   [ -n "$sid" ] && echo "$sid" > "$APP_RUN/.session-id"
+  [ -n "$sid" ] && [ -f "$MAIN/tools/sessions/name_check.py" ] && python3 "$MAIN/tools/sessions/name_check.py" --fix   # <Desc>_<app>_<n>
   local svc; svc="$APPS_BIN/service.$(service_variant).sh"
   echo "ready: $APP_REF = $who · owner $owner${sid:+ · session $sid}"
   if [ -x "$svc" ] && "$svc" installed "$APP_RUN" >/dev/null 2>&1; then
@@ -125,7 +127,7 @@ EOF
     echo "write end: run_in_background: $APPS_BIN/app run $APP_REF   (or: app install-service $APP_ID)"
   fi
   echo "read end:  run_in_background: $APPS_BIN/wait-event.sh $APP_REF"
-  echo "then:      app work $APP_ID <ticket> · app name-session $APP_ID <Desc>"
+  echo "then:      app work $APP_ID <ticket>   (session name was checked above; app name-session $APP_ID <Desc> to change Desc)"
 }
 
 cmd_run() { need_app "${1:-}"; [ -f "$APP_RUN/.env" ] || die "run app up $APP_ID first"; exec "$APPS_BIN/guardian.sh" "$APP_RUN"; }
@@ -174,14 +176,17 @@ cmd_work() {
   need_app "${1:-}"; local t=${2:-}; [ -n "$t" ] || die "usage: app work <id> <ticket> [--title …] [--depends …]"; shift 2
   valid_ticket "$t"; local title="" deps=""
   while [ $# -gt 0 ]; do case "$1" in --title) title=${2:-}; shift 2;; --depends) deps=${2:-}; shift 2;; *) die "unknown arg $1";; esac; done
-  local d; d=$(ticket_dir "$t"); local tw; tw=$(work_tool attach)
-  [ -n "$tw" ] && "$tw" "$APP_CO/tickets/$t" --role "$(printf '%s' "$APP_ID" | tr 'A-Z' 'a-z')" >/dev/null   # the app is a role: its handoff is handoff/<id>.md
+  local d; d=$(ticket_dir "$t"); local tw nt
+  [ ! -d "$d" ] && [ -d "$BUSINESS/$APP_CO/tickets/_archive/$t" ] && die "ticket $t is archived; reopen it first: tools/work/work reopen $APP_CO/tickets/_archive/$t"
+  tw=$(work_tool attach); nt=$(work_tool new-ticket)
+  # New ticket: tools/work creates it from the templates (filled), then attach binds this session.
+  [ ! -d "$d" ] && [ -n "$nt" ] && { "$nt" "$APP_CO" "$t" "${title:-$t}" >/dev/null || die "work new-ticket failed for $t"; }
+  if [ -n "$tw" ]; then   # the app is a role: its handoff is handoff/<id>.md
+    "$tw" "$APP_CO/tickets/$t" --role "$(printf '%s' "$APP_ID" | tr 'A-Z' 'a-z')" >/dev/null || echo "app: work attach failed for $t; this session is not bound to it" >&2
+  fi
   if [ ! -f "$d/STATE.md" ]; then   # fallback when tools/work is absent: create the ticket dir directly
     mkdir -p "$d"/{reports,evidence,history}
-    local f; for f in STATE.md LOG.md HANDOFF.md; do
-      if [ -f "$MAIN/templates/ticket/$f" ]; then sed "s/<ID>/$t/g" "$MAIN/templates/ticket/$f" > "$d/$f"; fi
-    done
-    [ -f "$d/STATE.md" ] || printf '# %s\n\nstatus: open\ntitle:\nproject:\napps:\ndepends_on:\ncreated: %s\nupdated:\n' "$t" "$(now)" > "$d/STATE.md"
+    printf '# %s\n\nstatus: open\ntitle:\nproject:\napps:\ndepends_on:\ncreated: %s\nupdated:\n' "$t" "$(now)" > "$d/STATE.md"
     [ -f "$d/LOG.md" ] || printf '# %s — log\n\nAppend-only. One line per thing a successor must know.\n\n' "$t" > "$d/LOG.md"
     [ -f "$d/HANDOFF.md" ] || handoff_template "$t" > "$d/HANDOFF.md"
     echo "new ticket dir: $d"
@@ -222,7 +227,12 @@ cmd_handoff() {
 
 cmd_close() {
   need_app "${1:-}"; need_ticket
-  set_field "$TD/STATE.md" status closed; set_field "$TD/STATE.md" updated "$(now)"; rm -f "$APP_RUN/ticket"
+  if [ -x "$MAIN/tools/work/work" ]; then   # sets closed:, archives to tickets/_archive/, rebuilds the index
+    bash "$MAIN/tools/work/work" close "$APP_CO/tickets/$T" || die "work close failed for $T"
+  else
+    set_field "$TD/STATE.md" status closed; set_field "$TD/STATE.md" updated "$(now)"
+  fi
+  rm -f "$APP_RUN/ticket"
   echo "ticket $T closed. Publish its summary where the team reads it (ticket system / project docs)."
 }
 
@@ -260,6 +270,7 @@ case "$CMD" in
   down) cmd_down "$@" ;;
   send) need_app "${1:-}"; shift; chan send "$@" ;;
   read) need_app "${1:-}"; shift; chan read-since "$@" ;;
+  fetch-file) need_app "${1:-}"; shift; chan fetch-file "$@" ;;
   inbox) need_app "${1:-}"; exec "$APPS_BIN/inbox.sh" "$APP_REF" ;;
   work) cmd_work "$@" ;;
   log) cmd_log "$@" ;;

@@ -21,9 +21,8 @@ pass `--business <co>` when two businesses have an app of that name.
 apps/
 ├── bin/        app (CLI) · guardian.sh · wait-event.sh · inbox.sh · listener-guard.sh ·
 │               context-restore.sh · lib.sh · service.<platform>.sh
-├── channels/   README.md (contract) · slack/ (listen, send, read-since, react, validate-creds, manifest)
+├── channels/   README.md (contract) · slack/ (listen, send, read-since, react, fetch-file, validate-creds, manifest)
 ├── templates/  app.yaml
-├── skill/      SKILL.md (installed as .claude/skills/app/)
 └── RULES.md
 ```
 
@@ -66,9 +65,9 @@ Requirements: Node 20+, bash, python3, `lsof`, `pgrep`. First time: `cd apps && 
 - Conversation: `app read <id> <conv>` — read before replying; it advances the cursor.
 - Reply: `app send <id> --conv <c> --thread <ts> --file msg.txt` (or `--stdin`; `--upload <path>` for
   files). Answer in the thread the message came from.
-- The eyes reaction is the ack; then the result. No "got it" line — `RULES.md` §4.
-- Off-topic question: answer from what you know, point to the owning app (`app list` PURPOSE); never
-  research another app's area — `RULES.md` §10.
+- Files in a message: the event's `files` lists ids; `app fetch-file <id> <file id>` downloads them
+  into `.runtime/files/`.
+- Conduct while handling (ack, staying on your area, …): `RULES.md`, not repeated here.
 - Log as you go: `app log <id> "…"` (the current ticket's `LOG.md`); refresh the app's
   handoff at milestones: `handoff/<id>.md` in the ticket (the app is a role; `app handoff <id>` creates it). Durable context goes into the ticket dir, not the app dir.
 - Switching ticket mid-session: write the handoff first, then `app work <id> <other>`.
@@ -103,4 +102,8 @@ session exits, sleep and reboots (`bin/service.mac-launchd.sh`; Linux slot
 
 Create it from `channels/slack/manifest.yaml` (rename first), generate the app-level token
 (`connections:write`), install to the workspace, copy the bot token into the app's `.secrets` file.
-Credentials never go into this repo.
+Credentials never go into this repo. `kits/slack-app-provision` scripts these steps.
+
+Changing scopes or events of an installed app (manifest or OAuth & Permissions page) takes effect
+only after **Reinstall to Workspace**; the bot token normally stays the same. Verify with
+`auth.test` (its `x-oauth-scopes` response header) rather than the settings page.

@@ -50,6 +50,7 @@ settings:
       - message.im          # someone DMs the bot
       - message.channels    # any message in a public channel the bot is in (listen_types: channel_message)
       - message.groups      # ditto, private channels
+      - message.mpim        # ditto, group DMs (handled as channel_message)
   interactivity:
     is_enabled: false
   socket_mode_enabled: true

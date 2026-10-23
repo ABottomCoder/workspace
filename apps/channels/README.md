@@ -13,6 +13,7 @@ in `APP_SECRETS`.
 | `send` | yes | `--conv <id> [--thread <ts>]` + text as argument, `--file <path>` or `--stdin`; `--upload <path>` sends a file. Posts as the app, never as a person. Prints `sent -> conv <id> ts <ts>`. |
 | `read-since` | yes | `<conv>` prints messages after the per-app cursor (`./.read-cursors.json`) incl. thread replies, then advances it; `--peek` does not advance; `--reset` forgets it; `--list-direct` prints the direct-conversation ids it knows. Rows: `[<epoch ts>]( ↳)? <who>: <text>`, `bot` as who for app-posted messages. |
 | `react` | no | Reads one `[chat-event]` line on stdin and adds the `APP_ACK_REACTION` reaction. Best effort, never blocks. |
+| `fetch-file` | no | `<file id>…` downloads files named in an event's `files` into `./files/` (mode 600) and prints `<id> -> <path> (<type>, <bytes>)`; exit 1 if any failed. |
 | `validate-creds` | yes | Checks the credentials; prints `<app user> <user id> in <workspace>` and exits 0, or the error and exits 1. |
 
 Also per adapter: `secrets.env.example` (credential keys) and the app manifest/registration template.
@@ -27,7 +28,8 @@ Also per adapter: `secrets.env.example` (credential keys) and the app manifest/r
 | `text` | message text |
 | `ts` | message id / timestamp (epoch seconds, fraction allowed) |
 | `thread` | thread root id, or `null` — reply with `send --thread <thread or ts>` |
-| `type` | `dm` · `app_mention` · `channel_message` |
+| `type` | `dm` · `app_mention` · `channel_message` (group DMs count as `channel_message`) |
+| `files` | attachments: `[{id, name, mimetype, size}]`, empty when none — fetch with `fetch-file` |
 | `raw` | the vendor's original event object |
 | optional | `conv_name`, `user_name`, `permalink` |
 

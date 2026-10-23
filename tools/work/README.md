@@ -1,6 +1,6 @@
 # tools/work — work items and session binding
 
-One tool for the two kinds of work (spec §3.3). Run `tools/work/work` with no arguments for usage.
+One tool for the two kinds of work. Run `tools/work/work` with no arguments for usage.
 
 | Kind | Where | Files |
 |---|---|---|
