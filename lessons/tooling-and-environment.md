@@ -16,7 +16,8 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 - Start test processes so you know their PID; kill the process group (`kill -- -PGID`) or the child, not just the wrapper.
 - Keep a guard's pattern out of your own compound commands (separate call or `[t]sx`).
 - Afterwards verify with `ps`/`pgrep -x` that your tree is gone and every other service is still up; check for leftovers before telling the user a tool works. Warn owners of template clones about inherited ops scripts.
-**Seen:** 6
+- Ad-hoc restarts during development count too: a one-off `pkill -f "src/main.ts"` to restart a dev server took down two other projects' public previews. Start dev servers with a pidfile from the first run.
+**Seen:** 7
 
 ### Assume the working directory has drifted; use absolute paths and isolated calls
 **Mistake:** A messaging script failed ("Cannot find module", auth error) after earlier `cd`s for grepping, and when chained after `cd other-repo` its dotenv loaded the wrong `.env`. A `cd service-a && rsync dist/ ... && rsync dist/ ...` chain shipped one service's build into another's target, three times.
@@ -196,4 +197,10 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 **Mistake:** Page-side helpers like `const pick = (v) => ...` inside an evaluate callback made every evaluate throw `__name is not defined`; a `.catch(() => null)` turned it into silently missing data (no account names were read).
 **Root cause:** tsx/esbuild `keepNames` wraps named functions with a `__name()` helper that exists in Node, not in the page.
 **Rule:** Keep evaluate callbacks to plain expressions and loops, or pass a string script; do helper work on the Node side. Never swallow an evaluate error without logging it once.
+**Seen:** 1
+
+### Bulk app-config changes go through the manifest, not per-item UI clicks
+**Mistake:** Adding ~18 OAuth scopes to 7 Slack apps one picker click at a time took far longer than the task warranted; the user had to ask why it was slow.
+**Root cause:** Started from the per-item UI path that worked for one scope and scaled it up instead of re-choosing the method for the bulk case.
+**Rule:** When a change repeats across many items or apps, pick the bulk path first (App Manifest editor or `apps.manifest.update`, one edit per app) and estimate wall time before starting.
 **Seen:** 1

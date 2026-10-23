@@ -109,3 +109,9 @@ Lessons about touching live systems and real data: restarts, deploy verification
 **Root cause:** Acted on assumed or cached state; did not look for operations already in flight on the same target.
 **Rule:** Before any order, payment, deletion or other real-world action (automated or manual): fetch the current state from the system of record, not a cache, and list pending or working operations on the same target. If either differs from what you assumed, stop and re-plan. Build the check into code paths that act, not only into habits.
 **Seen:** 1
+
+### Orphan sweeps on a shared vendor account must consult every deployment
+**Mistake:** A test-data cleanup script deleted vendor-side resources (voice clones, avatars) "not referenced by this database"; dev and a public preview shared the vendor account, so run against dev it would have deleted the live demo's voice. Caught on a dry run.
+**Root cause:** "Orphan" was defined relative to one deployment's database while the vendor account spans several.
+**Rule:** Before deleting vendor-side resources by "unreferenced", list every deployment that shares the account and build the keep-set from all of them (or scope deletion to IDs you created in this run). Always dry-run first and read the delete list.
+**Seen:** 1

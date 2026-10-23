@@ -15,11 +15,11 @@ it everywhere wastes context on unrelated work. Domain lessons stay in their cat
 Entry format: `### <short title>` / **Mistake:** / **Root cause:** / **Rule:** / **Seen:** <times merged>.
 Entries are ordered by Seen.
 
-- [verification](verification.md) (40) — proving a change, fix or claim is true: checks that can fail, real entry points, reading evidence
+- [verification](verification.md) (41) — proving a change, fix or claim is true: checks that can fail, real entry points, reading evidence
 - [evidence-and-asking](evidence-and-asking.md) (16) — self-service before asking, hypothesis vs observation, relayed claims, read-only probes
 - [engineering](engineering.md) (25) — generic code and framework gotchas (frontend, backend, database, infra code)
-- [tooling-and-environment](tooling-and-environment.md) (32) — shell, processes, schedulers, CLIs, browsers, platform quirks
-- [data-and-production](data-and-production.md) (18) — restarts, migrations, destructive ops, backups, production data and environments
+- [tooling-and-environment](tooling-and-environment.md) (33) — shell, processes, schedulers, CLIs, browsers, platform quirks
+- [data-and-production](data-and-production.md) (19) — restarts, migrations, destructive ops, backups, production data and environments
 - [communication](communication.md) (16) — writing for the reader, threads, reports, client promises, user-facing copy
 - [multi-session-and-bots](multi-session-and-bots.md) (12) — parallel sessions and chat bots: identities, listeners, shared files, message delivery
 - [git-and-release](git-and-release.md) (14) — reviews, PRs, branches, destructive git, deploy and CI proof
@@ -28,4 +28,4 @@ Entries are ordered by Seen.
 - [context-and-memory](context-and-memory.md) (7) — subagents, knowledge routing, docs vs memory, self-review
 - [secrets-and-safety](secrets-and-safety.md) (6) — credentials handling, publication channels, redaction, privilege
 
-Total: 202 entries.
+Total: 208 entries.

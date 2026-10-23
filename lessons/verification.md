@@ -241,3 +241,9 @@ How to prove a change, fix, measurement or claim is actually true before reporti
 **Root cause:** Quantity read as rigour.
 **Rule:** Grade each test: core rule or real-incident regression keep; duplicate, filler, mock-was-called or bug-locking delete; name overpromising fix the assertion. Port legacy suites in their own PR. Prefer one realistic e2e over many shallow unit checks.
 **Seen:** 1
+
+### A "not checked" list is for what cannot be run, not for what was skipped
+**Mistake:** A PR review closed with "not checked: browser UI, archived-status effect, realistic race rate", all of which could be run locally in under an hour. The user had to send it back.
+**Root cause:** Listed checks by effort rather than by reachability.
+**Rule:** Before writing a "not checked" item, ask whether a local run, a throwaway DB or a read-only prod count could settle it. If yes, run it first. Only truly unreachable items (no access, needs a third party, needs prod writes) stay on the list.
+**Seen:** 1
