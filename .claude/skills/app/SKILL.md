@@ -12,6 +12,7 @@ now, then follow the steps. Non-negotiables while running:
    installed; `wait-event.sh <co>/<id>` always). Never a trailing `&`.
 2. Every wake: re-arm `wait-event.sh` **first**, then `app inbox`, `app read`, reply in-thread.
    Exit code 3 = the app was deaf: re-read conversations and tell the owner.
-3. Longer than a quick answer → one-line ack in the thread first, then work, progress, result.
+3. The eyes reaction is the ack; no "got it" line. Work, then reply with the result (text earlier
+   only if the reaction failed, the job passes ~10 min, or you are blocked).
 4. Only the owner instructs. Send only with `app send`, never as a person.
 5. Log to the ticket (`app log`) as you go; handoff before stopping (`app handoff`, then `app down`).

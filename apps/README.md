@@ -66,7 +66,7 @@ Requirements: Node 20+, bash, python3, `lsof`, `pgrep`. First time: `cd apps && 
 - Conversation: `app read <id> <conv>` — read before replying; it advances the cursor.
 - Reply: `app send <id> --conv <c> --thread <ts> --file msg.txt` (or `--stdin`; `--upload <path>` for
   files). Answer in the thread the message came from.
-- Ack before long work, progress, result — `RULES.md` §4.
+- The eyes reaction is the ack; then the result. No "got it" line — `RULES.md` §4.
 - Log as you go: `app log <id> "…"` (the current ticket's `LOG.md`); refresh the app's
   handoff at milestones: `handoff/<id>.md` in the ticket (the app is a role; `app handoff <id>` creates it). Durable context goes into the ticket dir, not the app dir.
 - Switching ticket mid-session: write the handoff first, then `app work <id> <other>`.
