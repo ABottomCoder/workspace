@@ -18,6 +18,7 @@ oauth_config:
       - chat:write          # post replies as the bot
       - reactions:write     # eyes reaction on each message the session receives (ack_reaction)
       - files:write         # send.js --upload
+      - files:read          # read files users share with the bot
       - im:history          # read DM history (context)
       - im:read             # detect DM channels
       - im:write            # open/send DMs
@@ -26,6 +27,22 @@ oauth_config:
       - users:read          # resolve user ids -> names
       - channels:read       # resolve channel ids -> names
       - groups:read         # resolve private channel names
+      - reactions:read      # see reactions on messages
+      - mpim:history        # group DMs: read
+      - mpim:read           # group DMs: detect
+      - mpim:write          # group DMs: open/send
+      - pins:read           # pinned items
+      - pins:write          # pin/unpin
+      - bookmarks:read      # channel bookmarks
+      - bookmarks:write     # add/edit channel bookmarks
+      - emoji:read          # custom emoji list (for reactions)
+      - usergroups:read     # resolve @group handles
+      - users.profile:read  # profile fields (title, status)
+      - team:read           # workspace name/domain
+      - channels:join       # join public channels on request
+      - chat:write.public   # post in public channels without joining
+      - canvases:read       # read canvases
+      - canvases:write      # create/edit canvases
 settings:
   event_subscriptions:
     bot_events:

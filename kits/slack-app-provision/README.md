@@ -39,9 +39,12 @@ node gen-token.mjs --out mybot.xapp.token              # app-level token (connec
 node read-xoxb.mjs <APP_ID> --out mybot.xoxb.token     # bot token
 ```
 
-- `create-app.mjs <AppName> <displayname> <workspace-regex> [--manifest file.json]`: default
-  manifest is a Socket Mode bot receiving `app_mention` and `message.im`, with scopes to read
-  mentions/DMs, post, and look up users and channels. Pass `--manifest` for your own.
+- `create-app.mjs <AppName> <displayname> <workspace-regex> [--manifest file.json] [--dry-run]`:
+  default manifest is a Socket Mode bot receiving `app_mention` and `message.im`, with scopes to
+  read mentions/DMs, post, and look up users and channels. Pass `--manifest` for your own.
+  `--dry-run` walks to the review step and closes it without creating, to check the selectors.
+  Handles both the current create flow (pick "From a manifest" → Continue → editor and workspace
+  on one step) and the older one (workspace first, editor after Next).
 - `gen-token.mjs [--name socket] [--out file]`: run with the token modal open.
 - `read-xoxb.mjs <APP_ID> [--out file]`: the app must be installed.
 - `nav.mjs <url|stay> [shot]`: navigate and screenshot, for checking state.
