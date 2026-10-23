@@ -13,6 +13,12 @@
         "hooks": [
           { "type": "command", "command": "f=\"$CLAUDE_PROJECT_DIR/apps/bin/context-restore.sh\"; if [ -f \"$f\" ]; then exec bash \"$f\"; fi; exit 0", "timeout": 10, "statusMessage": "Restoring app context" }
         ]
+      },
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          { "type": "command", "command": "f=\"$CLAUDE_PROJECT_DIR/tools/sessions/name_check.py\"; if [ -f \"$f\" ]; then exec python3 \"$f\" --hook --fix; fi; exit 0", "timeout": 10, "statusMessage": "Checking session name" }
+        ]
       }
     ],
     "PreCompact": [
