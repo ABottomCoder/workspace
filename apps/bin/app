@@ -48,13 +48,14 @@ reader_state() {   # ok | busy <s> | deaf
 }
 
 cmd_list() {
-  printf "%-14s %-22s %-8s %-8s %s\n" BUSINESS APP CHANNEL LISTENER TICKET
+  printf "%-14s %-22s %-8s %-8s %-22s %s\n" BUSINESS APP CHANNEL LISTENER TICKET PURPOSE
   local f d n
   for f in "$BUSINESS"/${CO:-*}/apps/*/app.yaml; do
     [ -f "$f" ] || continue; d=$(dirname "$f")
     n=$(listener_count "$d/.runtime/listener.log")
-    printf "%-14s %-22s %-8s %-8s %s\n" "$(basename "$(dirname "$(dirname "$d")")")" "$(basename "$d")" \
-      "$(field "$f" channel)" "$([ "${n:-0}" -gt 0 ] && echo up || echo down)" "$(cat "$d/.runtime/ticket" 2>/dev/null || echo -)"
+    printf "%-14s %-22s %-8s %-8s %-22s %s\n" "$(basename "$(dirname "$(dirname "$d")")")" "$(basename "$d")" \
+      "$(field "$f" channel)" "$([ "${n:-0}" -gt 0 ] && echo up || echo down)" "$(cat "$d/.runtime/ticket" 2>/dev/null || echo -)" \
+      "$(field "$f" purpose)"
   done
 }
 

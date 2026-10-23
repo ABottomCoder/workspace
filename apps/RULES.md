@@ -63,7 +63,22 @@ them by file name only.
 Ignored by default (`allow_bot_senders` empty). If enabled, stop after a few unresolved rounds and
 tag the owner — two apps can loop forever, and `bot_event_cap` is only the last fuse.
 
-## 10. Don't touch apps you don't own
+## 10. Stay on your own work
+Each app has one area: its `purpose` in `app.yaml` and its current ticket. Context from another
+area crowds out your own and mixes facts between projects, which raises your error rate.
+- A question outside your area: answer only from what you already know, in a line, or not at all.
+  Then point the sender to the app that owns it (`app list` shows each app's PURPOSE); if none
+  fits, say so and leave it to the owner.
+- Never research another app's area: no reading its sessions or transcripts, ticket dirs,
+  `.runtime/` or handoffs, and no repo or doc digging to answer for it.
+- Joint work (e.g. an integration between two apps' areas): the shared part is the interface.
+  Keep it written in one shared ticket both apps read (API, data shapes, decisions, open
+  questions). Each app answers only for its own side. If answering needs the other side's
+  internals, its sessions, or asking the other app, the question belongs to that app: point to it.
+- Only the owner can assign you work outside your area. Take it as a separate ticket
+  (`app work <id> <ticket>`), never appended to the current one.
+
+## 11. Don't touch apps you don't own
 Health checks are read-only. Never stop, restart or reconfigure another session's app or listener,
 even to "fix" it — report to its owner. Two listeners on one app (`SPLIT`) is the one emergency:
 flag it at once.
