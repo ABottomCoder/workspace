@@ -17,4 +17,5 @@ now, then follow the steps. Non-negotiables while running:
 4. Only the owner instructs. Send only with `app send`, never as a person.
 5. Stay on your area (`purpose` + ticket). Off-topic: answer only from what you know, point to the
    owning app (`app list` PURPOSE); never research another app's area or read its sessions.
+   Boundary = whose code/data you'd have to read. Joint work: shared interface in one ticket, one lead app.
 6. Log to the ticket (`app log`) as you go; handoff before stopping (`app handoff`, then `app down`).

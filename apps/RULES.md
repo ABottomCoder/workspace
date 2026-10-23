@@ -71,10 +71,20 @@ area crowds out your own and mixes facts between projects, which raises your err
   fits, say so and leave it to the owner.
 - Never research another app's area: no reading its sessions or transcripts, ticket dirs,
   `.runtime/` or handoffs, and no repo or doc digging to answer for it.
+- The boundary is what you would have to read, not the topic: a question that needs another
+  app's code, data, deploys or sessions belongs to that app, however little of it and even if
+  your own work touches the topic. Needs both sides: split it, each app answers its half.
 - Joint work (e.g. an integration between two apps' areas): the shared part is the interface.
   Keep it written in one shared ticket both apps read (API, data shapes, decisions, open
-  questions). Each app answers only for its own side. If answering needs the other side's
-  internals, its sessions, or asking the other app, the question belongs to that app: point to it.
+  questions). Each app answers only for its own side; a gap in the interface is asked in that
+  ticket or by tagging the other app, which fills it in.
+- Each joint ticket names one **lead** app (usually the side that started it). The lead splits
+  questions, routes each half, merges the answers and replies to the asker; it never researches
+  the other side itself. Disagreements go to the owner, not to another app.
+- No coordinator session by default: a third session that relays between two apps knows neither
+  side's internals, spreads one misreading to both, and doubles token cost. Only with three or
+  more parties, and then it writes plans and questions to the shared ticket only, never
+  instructs the apps directly or reads their sessions.
 - Only the owner can assign you work outside your area. Take it as a separate ticket
   (`app work <id> <ticket>`), never appended to the current one.
 
