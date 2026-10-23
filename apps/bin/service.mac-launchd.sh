@@ -3,19 +3,20 @@
 # survives session exits, sleep and reboots. Only touched when the user runs
 # `app install-service <id>`; `app up/down` call start/stop if it is installed.
 #
-#   service.mac-launchd.sh install|uninstall|installed|sync|start|stop <runtime-dir>
+#   service.mac-launchd.sh install|uninstall|installed|stale|sync|start|stop <runtime-dir>
 #
 # macOS privacy protection (TCC) blocks launchd jobs from reading ~/Documents, ~/Desktop and
 # ~/Downloads ("Operation not permitted"), and the main dir usually lives there. So `install`/`sync`
 # stage what the write end needs (apps code + node_modules, the generated .env, a copy of the
 # credentials, mode 600) into a non-protected dir and point <runtime>/listener.log at the staged
-# log with a symlink; readers in the session are unaffected. Re-run `sync` (done by `app up`) after
-# changing apps code or credentials.
+# log with a symlink; readers in the session are unaffected. Re-run `sync` after changing apps code
+# or credentials: `app up` does, and `wait-event.sh` does on each wake when `stale` says the staged
+# code differs from the repo (a stale copy once kept a listener fix out of every service for hours).
 #   stage: ${APPS_SERVICE_HOME:-~/.local/share/workspace-apps}/<co>/<id>/{code,run}
 set -u
 . "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 VERB=${1:-}; RUN=${2:-}
-[ -n "$VERB" ] && [ -f "$RUN/.env" ] || die "usage: service.mac-launchd.sh install|uninstall|installed|sync|start|stop <runtime-dir>"
+[ -n "$VERB" ] && [ -f "$RUN/.env" ] || die "usage: service.mac-launchd.sh install|uninstall|installed|stale|sync|start|stop <runtime-dir>"
 HOME_DIR=$(cd "$RUN/.." && pwd); ID=$(basename "$HOME_DIR"); CO=$(basename "$(dirname "$(dirname "$HOME_DIR")")")
 LABEL="workspace.app.$CO.$ID"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
@@ -64,6 +65,7 @@ loaded() { launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1; }
 
 case "$VERB" in
   installed) [ -f "$PLIST" ] ;;
+  stale) ! { diff -rq "$APPS_ROOT/bin" "$STAGE/code/bin" && diff -rq "$APPS_ROOT/channels" "$STAGE/code/channels"; } >/dev/null 2>&1 ;;
   sync) sync_stage ;;
   install) sync_stage; write_plist; loaded && launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null
            launchctl bootstrap "$DOMAIN" "$PLIST" && echo "installed $LABEL ($PLIST); stage $STAGE" ;;

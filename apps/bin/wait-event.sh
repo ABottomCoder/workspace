@@ -39,6 +39,13 @@ STATE="$DIR/.wait-offset"
 READ_SINCE=$(channel_cmd "$APP_CHANNEL" read-since)
 REACT=$(channel_cmd "$APP_CHANNEL" react)   # optional verb
 ensure_node
+# A service-run write end executes a staged copy of the apps code (see service.<variant>.sh);
+# refresh it when the repo changed, and restart so the new code runs now, not after a reboot.
+SVC="$APPS_BIN/service.$(service_variant).sh"
+if [ -x "$SVC" ] && "$SVC" installed "$APP_RUN" 2>/dev/null && "$SVC" stale "$APP_RUN"; then
+  "$SVC" sync "$APP_RUN" && "$SVC" start "$APP_RUN" >/dev/null 2>&1 \
+    && echo "[wait-event] staged service code was stale; synced and restarted the write end" >&2
+fi
 if [ -z "${CATCHUP+x}" ]; then
   CATCHUP=$(field "$APP_CONF" catchup | tr ',' ' ')
   [ -n "$CATCHUP" ] || CATCHUP=$( [ -n "$READ_SINCE" ] && cd "$DIR" && $READ_SINCE --list-direct 2>/dev/null | paste -sd' ' -)
