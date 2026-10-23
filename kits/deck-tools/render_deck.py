@@ -48,7 +48,7 @@ DEFAULTS = {
 DEFAULT_KICKERS = {
     'agenda': 'Agenda', 'traffic': 'Rules', 'beats': 'Use case', 'statement': 'Concept',
     'twocol': 'Concept', 'scorecard': 'Checklist', 'activity': 'Activity', 'closing': 'Wrap up',
-    'flow': 'Process', 'compare': 'Before and after',
+    'flow': 'Process', 'compare': 'Before and after', 'stats': 'By the numbers',
 }
 CFG = {}
 
@@ -551,9 +551,32 @@ def t_compare(prs, d):
     return s
 
 
+def t_stats(prs, d):
+    """Headline numbers in tiles; each item is "<figure>: <label>" (up to six)."""
+    s = slide_base(prs, d['title'], d['kicker'] or kicker('stats'))
+    items = [it.partition(': ') for it in chips(d['onslide'])][:6]
+    per_row = len(items) if len(items) <= 4 else 3
+    gap = Inches(0.3)
+    tw = (W - 2 * MARGIN - gap * (per_row - 1)) / per_row
+    th = Inches(3.6) if len(items) <= 4 else Inches(1.85)
+    for i, (fig, _, label) in enumerate(items):
+        x = MARGIN + (i % per_row) * (tw + gap)
+        y = Inches(2.2) + (i // per_row) * (th + gap)
+        panel(s, x, y, tw, th, WASH)
+        gradient_bar(s, x, y, tw, Pt(5))
+        textbox(s, x + Inches(0.3), y + Inches(0.35), tw - Inches(0.6), Inches(1.1),
+                fig, (44 if len(fig) <= 5 else 36) if len(items) <= 4 else 30, bold=True, color=ACCENT)
+        textbox(s, x + Inches(0.3), y + (Inches(1.55) if len(items) <= 4 else Inches(1.05)),
+                tw - Inches(0.6), th - Inches(1.7), label, 16, spacing=1.25)
+    if d['footer']:
+        textbox(s, MARGIN, Inches(6.2), W - 2 * MARGIN, Inches(0.5), clean(d['footer']), 12, color=MUTED)
+    return s
+
+
 RENDER = {'flow': t_flow, 'compare': t_compare,'title': t_title, 'agenda': t_agenda, 'traffic': t_traffic, 'beats': t_beats,
           'statement': t_statement, 'twocol': t_twocol, 'scorecard': t_scorecard,
-          'activity': t_activity, 'closing': t_closing, 'bullets': t_bullets}
+          'activity': t_activity, 'closing': t_closing, 'bullets': t_bullets,
+          'stats': t_stats}
 
 
 def build(md_path, out_path):

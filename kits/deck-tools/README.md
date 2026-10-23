@@ -45,6 +45,7 @@ Each slide is a `###` heading with an id and a title, then labelled bullet lines
 - `Template:` (default `bullets`): `title`, `agenda`, `flow` (steps split on `→`), `beats`
   (sections start with the `beat_labels`), `traffic` (sections start with 🟢 / 🟡 / 🔴), `twocol`,
   `statement`, `scorecard` (questions split on `?`), `activity`, `compare` (`Without: … With: …`),
+  `stats` (up to six `<figure>: <label>` tiles),
   `closing`, `bullets`.
 - `Kicker:` overrides the small caps label above the title (per-template defaults in `kickers`).
 - `**bold**` and `*italic*` markers are stripped.
