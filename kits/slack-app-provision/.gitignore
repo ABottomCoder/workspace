@@ -2,3 +2,4 @@ node_modules/
 shots/
 *.token
 .env
+package-lock.json
