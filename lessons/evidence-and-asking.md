@@ -97,3 +97,9 @@ What counts as evidence before stating a fact, a diagnosis or a limit, and what 
 **Root cause:** Took own (prior-session) output as ground truth; output was produced faster than it was verified.
 **Rule:** Before judging someone against a document you or an earlier session produced, check that its definitions are self-consistent and match the grading criterion. If their error has the same shape as the doc's wording, fix the doc first.
 **Seen:** 1
+
+### A filtered search can't back a "none / only N" count
+**Mistake:** Reported "only 2 apps mention X" from a grep restricted to `--include=*.js/*.ts/*.json`; an unfiltered rerun found 10 more hits in `.html` files, so the earlier answer had to be corrected.
+**Root cause:** Narrowed file types for speed, then stated the count as if the search were complete.
+**Rule:** For an absence or count claim, run the search without type filters (exclude only vendored/build dirs), or state the filter in the answer. Sanity-check a surprising count with one unfiltered pass before sending.
+**Seen:** 1
