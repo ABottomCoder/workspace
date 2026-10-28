@@ -5,9 +5,11 @@
 //   send.js --conv <id> [--at <qq>]… [--image <url|path>]… ["text" | --file | --stdin]
 //   send.js --conv <id> --upload <path>                         a file (group file / private file)
 //
+// Local files (--upload, --image <path>) are sent base64-encoded: the endpoint usually runs in a
+// container that can't see host paths. Upload limit 20 MB.
 // Fuse: at most APP_SEND_CAP_PER_HOUR posts per rolling hour (default 30) — a runaway guard, not a
 // tuning knob; ./.send-times.json holds the timestamps. Each post is recorded in the transcript.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { call, parseConv, record } from './onebot.mjs';
 
@@ -43,15 +45,17 @@ try {
   const me = await call('get_login_info');
   if (upload) {
     const p = resolve(upload);
-    if (c.kind === 'group') await call('upload_group_file', { group_id: c.id, file: p, name: basename(p) });
-    else await call('upload_private_file', { user_id: c.id, file: p, name: basename(p) });
+    if (statSync(p).size > 20 * 1024 * 1024) throw new Error(`${basename(p)} is over 20 MB`);
+    const file = `base64://${readFileSync(p).toString('base64')}`;
+    if (c.kind === 'group') await call('upload_group_file', { group_id: c.id, file, name: basename(p) });
+    else await call('upload_private_file', { user_id: c.id, file, name: basename(p) });
     console.log(`uploaded -> conv ${conv} file ${basename(p)}`);
   } else {
     const message = [];
     if (thread) message.push({ type: 'reply', data: { id: String(thread) } });
     for (const q of ats) message.push({ type: 'at', data: { qq: String(q) } }, { type: 'text', data: { text: ' ' } });
     if (text) message.push({ type: 'text', data: { text } });
-    for (const img of images) message.push({ type: 'image', data: { file: /^https?:\/\//.test(img) ? img : `file://${resolve(img)}` } });
+    for (const img of images) message.push({ type: 'image', data: { file: /^https?:\/\//.test(img) ? img : `base64://${readFileSync(resolve(img)).toString('base64')}` } });
     const r = c.kind === 'group'
       ? await call('send_group_msg', { group_id: c.id, message })
       : await call('send_private_msg', { user_id: c.id, message });

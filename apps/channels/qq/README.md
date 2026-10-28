@@ -60,7 +60,12 @@ to the group unless the user asks.
 - Blocklist: user ids in `<app dir>/memory/blocklist.txt` (the persona session adds people who
   stay hostile after a warning) are recorded but never wake the session; the owner can't be
   blocked. Unblock: delete the line.
-- `send`: quote-reply (`--thread <message id>`), `--at`, `--image <https url>`; capped by
+- Friend requests and group invites are rejected automatically, except the owner's. Private
+  chats reach the app only from `listen_dm_users` (set it to the owner).
+- Files: a persona session sends only files it wrote into `<app dir>/memory/outbox/`
+  (`send_file`; `../`, symlinks and absolute paths are refused). Local files and images go to the
+  endpoint base64-encoded (the container can't see host paths), 20 MB max.
+- `send`: quote-reply (`--thread <message id>`), `--at`, `--image <https url | path>`; capped by
   `send_cap_per_hour` (default 30) as a runaway fuse.
 - Memory digests (`days/`, `members/`, `group.md`) are written in the background for past days
   while a persona session runs (`app-mcp.mjs`); `app digest <co>/<id> [date]` does one by hand.

@@ -33,7 +33,7 @@ case "$persona" in /*) ;; *) persona="$APP_HOME/$persona";; esac
 [ -f "$persona" ] || die "persona file missing: $persona"
 [ -f "$APP_RUN/.env" ] || die "run app up $APP_ID first"
 model=$(field "$APP_CONF" model); model=${model:-sonnet}
-MEM="$APP_HOME/memory"; mkdir -p "$MEM"/{raw,days,members}; chmod 700 "$MEM"
+MEM="$APP_HOME/memory"; mkdir -p "$MEM"/{raw,days,members,outbox}; chmod 700 "$MEM"
 S="$APP_RUN/session"; mkdir -p "$S"; chmod 700 "$S"; rm -f "$S/stop"
 
 python3 - "$S" "$APPS_BIN" "$APP_REF" "$APP_RUN" "$APP_CHANNEL" "$DIGEST" <<'EOF'
@@ -49,7 +49,7 @@ json.dump(settings, open(f"{s}/settings.json", "w"), indent=1)
 EOF
 
 { cat "$APPS_ROOT/persona-conduct.md"; printf '\n\n# Your persona (from the owner)\n\n'; cat "$persona"
-  printf '\n\n# This app\n\n- App: %s · channel %s · listened conversations: %s\n- Owner (the person who runs you): %s\n- Memory dir (your working dir): %s\n' \
+  printf '\n\n# This app\n\n- App: %s · channel %s · listened conversations: %s\n- Owner / developer (set you up; only their private messages adjust you): %s\n- Memory dir (your working dir): %s\n' \
     "$APP_REF" "$APP_CHANNEL" "$(field "$APP_CONF" listen_convs)" "$(cat "$APP_RUN/owner" 2>/dev/null)" "$MEM"
 } > "$S/prompt.md"
 

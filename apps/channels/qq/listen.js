@@ -8,6 +8,7 @@
 //                     of APP_TRIGGER_WORDS (comma list) — the session should answer
 //   type channel_message  anything else in a group — the session decides whether to join in
 //   type dm           a private chat
+// Friend requests and group invites are rejected (except from APP_OWNER).
 // Users listed in <APP_MEMORY_DIR>/blocklist.txt (one id per line, `#` comments; the persona session
 // maintains it) are recorded but never wake the session; the owner (APP_OWNER) can't be blocked.
 // Also: `[ready]`, `[heartbeat] <ISO>` every 60 s and `[dropped] …` to stderr (the log).
@@ -57,7 +58,19 @@ function queue(conv, ev, mention) {
   bursts.set(conv, b);
 }
 
+// Friend requests and group invites: rejected, except the owner's (the app lives in its listened
+// groups only and talks privately to nobody else).
+async function request(ev) {
+  if (String(ev.user_id) === String(process.env.APP_OWNER)) { console.error(`[request] ${ev.request_type} from owner — left for the owner`); return; }
+  const action = ev.request_type === 'friend' ? 'set_friend_add_request' : 'set_group_add_request';
+  try {
+    await call(action, { flag: ev.flag, approve: false, ...(ev.request_type === 'group' ? { sub_type: ev.sub_type, type: ev.sub_type } : {}) });
+    console.error(`[request-rejected] ${ev.request_type}${ev.sub_type ? `/${ev.sub_type}` : ''} from ${ev.user_id}${ev.group_id ? ` group ${ev.group_id}` : ''}`);
+  } catch (e) { console.error(`[request] reject failed: ${e.message}`); }
+}
+
 function handle(ev) {
+  if (ev.post_type === 'request') { request(ev); return; }
   if (ev.post_type !== 'message' && ev.post_type !== 'message_sent') return;
   const conv = convOf(ev);
   const allowed = ev.message_type === 'group'

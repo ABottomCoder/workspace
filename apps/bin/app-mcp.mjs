@@ -6,8 +6,8 @@
 // starts `persona-session.sh --digest` for the oldest such day in the background (one at a time).
 // So digests happen while the app runs, with no scheduler (launchd can't read ~/Documents anyway).
 import { spawn } from 'node:child_process';
-import { existsSync, openSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, openSync, readFileSync, realpathSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -117,6 +117,27 @@ server.registerTool('send', {
   const args = [...a, '--conv', conv, ...(reply_to ? ['--thread', reply_to] : []), ...at.flatMap((q) => ['--at', q]),
     ...images.flatMap((u) => ['--image', u]), ...(body ? ['--stdin'] : [])];
   const r = await run(c, args, { stdin: body || null, timeoutMs: 30_000 });
+  return text(r.code === 0 ? r.out.trim() : `FAILED: ${(r.err || r.out).trim()}`);
+});
+
+// Files: only from <memory dir>/outbox/, which the session writes itself. Transcripts, profiles and
+// notes stay unsendable even if someone talks the session into trying.
+const OUTBOX = join(MEM, 'outbox');
+server.registerTool('send_file', {
+  title: 'Send a file',
+  description: 'Send a file you wrote into outbox/ (in your memory dir) to a conversation, as a file, or as an image if as_image is true.',
+  inputSchema: {
+    conv: z.string().describe('Conversation id from the event.'),
+    path: z.string().describe('File name or path inside outbox/, e.g. "teams.txt".'),
+    as_image: z.boolean().default(false).describe('Send an image file inline as a picture instead of as a file.'),
+  },
+}, async ({ conv, path, as_image }) => {
+  let real;
+  try { real = realpathSync(join(OUTBOX, path.replace(/^outbox\//, ''))); } catch { return text(`FAILED: no such file in outbox/: ${path}`); }
+  if (!real.startsWith(realpathSync(OUTBOX) + sep)) return text('FAILED: only files inside outbox/ can be sent');
+  if (!statSync(real).isFile()) return text('FAILED: not a file');
+  const [c, ...a] = verb('send');
+  const r = await run(c, [...a, '--conv', conv, ...(as_image ? ['--image', real] : ['--upload', real])], { timeoutMs: 120_000 });
   return text(r.code === 0 ? r.out.trim() : `FAILED: ${(r.err || r.out).trim()}`);
 });
 
