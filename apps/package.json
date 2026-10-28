@@ -5,8 +5,11 @@
   "type": "module",
   "description": "Chat apps (bots) a Claude Code session can run by name; channel adapters under channels/",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@slack/socket-mode": "^2.0.0",
     "@slack/web-api": "^7.0.0",
-    "dotenv": "^16.4.0"
+    "dotenv": "^16.4.0",
+    "ws": "^8.18.0",
+    "zod": "^3.25.76"
   }
 }

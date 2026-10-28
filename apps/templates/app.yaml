@@ -14,3 +14,11 @@ allow_bot_senders:    # peer app/bot ids whose messages pass (empty = ignore all
 bot_event_cap: 30     # max peer-bot events per hour (runaway-loop fuse)
 ack_reaction: eyes    # reaction added once the session has a message (empty = off)
 catchup:              # conversation ids re-read after each reconnect (empty = direct conversations)
+# --- persona apps only (RULES.md §12); leave empty for a work app ---
+persona:              # persona file, relative to the app dir (e.g. persona.md); runs via `app session <id>`
+memory:               # on = keep the full transcript + nightly digests/profiles in <app dir>/memory/
+model:                # model for app session / digest (default sonnet)
+trigger_words:        # comma list: names that count as addressing the app (channels that support it)
+debounce_ms:          # quiet time that ends a burst of messages (qq; default 3000)
+send_cap_per_hour:    # runaway fuse on posts (qq; default 30)
+qq_account:           # qq: the QQ account logged in on the endpoint (channels/qq/napcat.sh finds the app by it)

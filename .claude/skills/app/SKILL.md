@@ -1,7 +1,12 @@
 ---
 name: app
-description: Run this session as a chat app (bot) by name — "use slack_helper to run this session", "start app helper", "stop the app". Takes over a configured app under business/*/apps/, keeps it listening, and follows the app conduct rules.
+description: Run this session as a chat app (bot) by name — "use slack_helper to run this session", "start app helper", "stop the app" — or start/stop a QQ bot by account — "启动qq机器人，使用 <QQ号>", "start the qq bot with account <n>", "停止qq机器人". Takes over a configured app under business/*/apps/, keeps it listening, and follows the app conduct rules.
 ---
+
+**QQ bot by account** ("启动qq机器人，使用 <QQ号>"): follow `apps/channels/qq/README.md` → Start
+(NapCat login, `app up`, write end, and for a persona app a restricted `app session --headless`;
+this session does not chat itself). Stop: same file → Stop. The rest of this skill is for running
+a work app in this session.
 
 # Run an app
 

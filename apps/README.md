@@ -1,7 +1,8 @@
 # apps — chat apps run from a Claude Code session
 
-An **app** is a chat bot (Slack today; other channels are parallel adapters) that a Claude Code
-session in the main dir takes over by name. It is a teammate with a name — no persona. Conduct:
+An **app** is a chat bot (Slack, QQ; other channels are parallel adapters) that a Claude Code
+session in the main dir takes over by name. It is a teammate with a name — no persona, except a persona app
+(RULES.md §12) the owner configures for social use, which runs restricted via `app session`. Conduct:
 **`RULES.md`** (read it before running one). Channel contract: **`channels/README.md`**.
 
 ## Where things live
@@ -20,8 +21,11 @@ pass `--business <co>` when two businesses have an app of that name.
 ```
 apps/
 ├── bin/        app (CLI) · guardian.sh · wait-event.sh · inbox.sh · listener-guard.sh ·
-│               context-restore.sh · lib.sh · service.<platform>.sh
+│               context-restore.sh · lib.sh · service.<platform>.sh ·
+│               persona-session.sh · persona-stop-hook.sh · app-mcp.mjs (persona apps)
 ├── channels/   README.md (contract) · slack/ (listen, send, read-since, react, fetch-file, validate-creds, manifest)
+│               · qq/ (OneBot v11: listen, send, read-since, validate-creds)
+├── persona-conduct.md, persona-digest.md   persona apps (RULES.md §12): conduct prompt, nightly memory pass
 ├── templates/  app.yaml
 └── RULES.md
 ```
@@ -71,6 +75,16 @@ Requirements: Node 20+, bash, python3, `lsof`, `pgrep`. First time: `cd apps && 
 - Log as you go: `app log <id> "…"` (the current ticket's `LOG.md`); refresh the app's
   handoff at milestones: `handoff/<id>.md` in the ticket (the app is a role; `app handoff <id>` creates it). Durable context goes into the ticket dir, not the app dir.
 - Switching ticket mid-session: write the handoff first, then `app work <id> <other>`.
+
+## Persona app — a member of a group chat (RULES.md §12)
+
+Set `persona:` (and usually `memory: on`) in `app.yaml`, then from an ordinary session:
+`app up <id>`, the write end (`app run <id>`, run_in_background), then the chatting session:
+`app session <id> --headless` (run_in_background) or `app session <id>` in a terminal of the
+user's. It is a restricted Claude Code session (no Bash, files only in `<app dir>/memory/`) that
+waits on the chat through the app MCP server and decides when to speak. Stop: `app down <id>`.
+Memory digests for past days run in the background while it is up (`app digest <id>` by hand).
+QQ apps: the full start/stop procedure is in `channels/qq/README.md`.
 
 ## Stop
 

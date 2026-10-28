@@ -9,4 +9,5 @@ no dependency on `apps/` or `business/`. Platform support: `docs/compatibility.m
 - [deck-tools](deck-tools/README.md): markdown deck to styled editable pptx (`render_deck.py`); Figma PDF export to editable pptx (`figma-to-pptx.py`).
 - [contrast-check](contrast-check/README.md): list hex colours in a site's JS bundles that would fail text contrast (candidates, not defects).
 - [diagrams](diagrams/README.md): architecture / data-flow diagram standard (C4 shapes, arrow semantics, storage-choice table, three-diagram method) with a shape library, an arrow checker and a headless-Chrome renderer. Read before drawing any architecture diagram.
+- QQ bot: not a kit (it is a chat app under `apps/`); start, stop and setup in [apps/channels/qq/README.md](../apps/channels/qq/README.md). Trigger: "启动qq机器人，使用 <QQ号>".
 - [slack-app-provision](slack-app-provision/README.md): create Slack apps from a manifest and read their tokens by driving a logged-in Chrome over CDP.

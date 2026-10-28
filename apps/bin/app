@@ -8,7 +8,7 @@
 #   app run <id>                           write end in the foreground (start as run_in_background)
 #                                          — not needed when the service is installed
 #   app status [id…] [--live]              listener / heartbeat / read end / verdict per app
-#   app down <id>                          stop this session's read end + write end for <id>
+#   app down <id>                          stop this session's read end + write end (+ persona session) for <id>
 #   app send <id> --conv <c> [--thread <ts>] ("text" | --file <p> | --stdin) [--upload <path>]
 #   app read <id> <conv> [--peek|--reset]  conversation since the cursor (advances it unless --peek)
 #   app fetch-file <id> <file id>…        download files from an event's `files` into .runtime/files/
@@ -18,6 +18,10 @@
 #   app handoff <id>                       the app's handoff file in the ticket (handoff/<id>.md): create or archive a copy
 #   app close <id>                         mark the current ticket closed
 #   app name-session <id> <Desc>           name this session <Desc>_<channel>_<name>_<n>
+#   app session <id> [--headless] [args…]  start a RESTRICTED session for a persona app (no Bash, no
+#                                          files outside its memory dir; chat through MCP tools only);
+#                                          --headless: as a background task of the calling session
+#   app digest <id> [YYYY-MM-DD]           write the day's memory digest + profiles (restricted, headless)
 #   app install-service <id> | uninstall-service <id>   (service.<platform>.sh; only on request)
 #
 # <id> = <channel>_<name> (or just <name> if unique); add --business <co> when ambiguous.
@@ -35,6 +39,7 @@ set -- "${ARGS[@]+"${ARGS[@]}"}"
 need_app() { [ -n "${1:-}" ] || die "usage: app $CMD <id>"; resolve_app "$1" "$CO"; }
 secrets_file() { echo "$BUSINESS/$APP_CO/.secrets/apps/$APP_ID.env"; }
 ticket_dir() { echo "$BUSINESS/$APP_CO/tickets/$1"; }
+memory_dir() { [ "$(field "$APP_CONF" memory)" = on ] && echo "$APP_HOME/memory"; }
 cur_ticket() { cat "$APP_RUN/ticket" 2>/dev/null; }
 need_ticket() { T=$(cur_ticket); [ -n "$T" ] || die "$APP_ID has no current ticket — run: app work $APP_ID <ticket>"; TD=$(ticket_dir "$T"); }
 valid_ticket() { [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || die "ticket id must be letters, digits, . _ - (got '$1')"; }
@@ -108,6 +113,11 @@ APP_LISTEN_DM_USERS=$(field "$APP_CONF" listen_dm_users)
 APP_ALLOW_BOT_SENDERS=$(field "$APP_CONF" allow_bot_senders)
 APP_BOT_EVENT_CAP=$(field "$APP_CONF" bot_event_cap)
 APP_ACK_REACTION=$(field "$APP_CONF" ack_reaction)
+APP_HOME=$APP_HOME
+APP_MEMORY_DIR=$(memory_dir)
+APP_TRIGGER_WORDS=$(field "$APP_CONF" trigger_words)
+APP_DEBOUNCE_MS=$(field "$APP_CONF" debounce_ms)
+APP_SEND_CAP_PER_HOUR=$(field "$APP_CONF" send_cap_per_hour)
 EOF
   )
   local vc who; vc=$(channel_cmd "$APP_CHANNEL" validate-creds) || die "channel $APP_CHANNEL has no validate-creds"
@@ -158,7 +168,8 @@ cmd_status() {
 
 cmd_down() {
   need_app "${1:-}"
-  local pids svc; pids=$(pgrep -f "guardian\.sh $APP_RUN\$"; pgrep -f "wait-event\.sh ($APP_CO/)?$APP_ID( |\$)")
+  local pids svc; pids=$(pgrep -f "guardian\.sh $APP_RUN\$"; pgrep -f "wait-event\.sh ($APP_CO/)?$APP_ID( |\$)"
+    pgrep -f "claude .*--settings $APP_RUN/session/settings\.json")   # a persona session (RULES.md §12)
   [ -n "$pids" ] && kill $pids 2>/dev/null
   svc="$APPS_BIN/service.$(service_variant).sh"
   [ -x "$svc" ] && "$svc" installed "$APP_RUN" >/dev/null 2>&1 && "$svc" stop "$APP_RUN"
@@ -253,6 +264,13 @@ cmd_name_session() {
   fi
 }
 
+cmd_session() {
+  need_app "${1:-}"; shift
+  [ "${1:-}" = --headless ] && { shift; exec "$APPS_BIN/persona-session.sh" --headless "$APP_REF" "$@"; }
+  exec "$APPS_BIN/persona-session.sh" "$APP_REF" "$@"
+}
+cmd_digest() { need_app "${1:-}"; shift; exec "$APPS_BIN/persona-session.sh" --digest "$APP_REF" "$@"; }
+
 cmd_service() {   # install|uninstall
   need_app "${2:-}"; local svc; svc="$APPS_BIN/service.$(service_variant).sh"
   [ -x "$svc" ] || die "no service variant for this platform ($(service_variant)); run the write end with: app run $APP_ID"
@@ -277,7 +295,9 @@ case "$CMD" in
   handoff) cmd_handoff "$@" ;;
   close) cmd_close "$@" ;;
   name-session) cmd_name_session "$@" ;;
+  session) cmd_session "$@" ;;
+  digest) cmd_digest "$@" ;;
   install-service) cmd_service install "$@" ;;
   uninstall-service) cmd_service uninstall "$@" ;;
-  *) sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  *) sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac
