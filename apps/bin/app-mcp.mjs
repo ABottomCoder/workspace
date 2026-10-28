@@ -6,7 +6,7 @@
 // starts `persona-session.sh --digest` for the oldest such day in the background (one at a time).
 // So digests happen while the app runs, with no scheduler (launchd can't read ~/Documents anyway).
 import { spawn } from 'node:child_process';
-import { existsSync, openSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, openSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -68,14 +68,17 @@ server.registerTool('wait_event', {
   description: 'Blocks until someone writes in a listened conversation (one event per burst of messages), then returns '
     + 'the event and every new message in that conversation since you last read it. Returns "no event" after max_wait_s; '
     + 'then call it again. Call it again right after handling each event — it is how you stay present in the chat.',
-  inputSchema: { max_wait_s: z.number().int().min(30).max(840).default(600).describe('Seconds to wait before returning "no event".') },
+  inputSchema: { max_wait_s: z.number().int().min(30).max(840).default(840).describe('Seconds to wait before returning "no event".') },
 }, async ({ max_wait_s }) => {
   // One wait at a time: two wait-event.sh runs share one offset and would deliver an event twice.
-  if (waiting) return text('a wait_event call is already running — call it once, not in parallel.');
-  waiting = true;
-  try { return await waitOnce(max_wait_s); } finally { waiting = false; }
+  // Claude Code may move this long call to the background: the session is then woken when it
+  // returns, and the Stop hook lets the session idle while WAITING exists (persona-stop-hook.sh).
+  if (waiting) return text('wait_event is already running in the background. End your turn now, silently; you will be woken when it returns.');
+  waiting = true; writeFileSync(WAITING, String(process.pid));
+  try { return await waitOnce(max_wait_s); } finally { waiting = false; try { unlinkSync(WAITING); } catch {} }
 });
 let waiting = false;
+const WAITING = join(APP_RUN, 'session', 'waiting');
 async function waitOnce(max_wait_s) {
   maybeDigest();
   const r = await run('bash', [join(BIN, 'wait-event.sh'), APP_REF], { timeoutMs: max_wait_s * 1000 });
