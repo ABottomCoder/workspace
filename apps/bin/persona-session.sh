@@ -75,4 +75,4 @@ export MCP_TOOL_TIMEOUT=900000   # wait_event blocks up to 14 min
 [ "$HEADLESS" = 1 ] && { set -- -p --output-format stream-json --verbose "$@"; exec >> "$S/out.jsonl" 2>> "$S/err.log"; }
 # ToolSearch: WebSearch/WebFetch are deferred tools, loaded through it; it can load only tools in this list
 claude "${COMMON[@]}" --tools "Read,Grep,Glob,Write,Edit,WebSearch,WebFetch,ToolSearch" --mcp-config "$S/mcp.json" "$@" -- \
-  "Start now: read group.md and the last 14 files in days/ if they exist, then call wait_event and keep handling events."
+  "Start now: call history for each listened conversation (last 80 messages), read group.md and the last 14 files in days/ if they exist, then call wait_event and keep handling events."

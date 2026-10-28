@@ -101,6 +101,16 @@ server.registerTool('read', {
   inputSchema: { conv: z.string().describe('Conversation id from an event, e.g. g123456.'), peek: z.boolean().default(false) },
 }, async ({ conv, peek }) => text(await readSince(conv, peek) || '(nothing)'));
 
+server.registerTool('history', {
+  title: 'Recent history of a conversation',
+  description: 'The last n messages of a conversation from the transcript, regardless of what you have read. Use it at session start and when you need more context than the new messages.',
+  inputSchema: { conv: z.string().describe('Conversation id, e.g. g123456.'), n: z.number().int().min(1).max(300).default(80) },
+}, async ({ conv, n }) => {
+  const [c, ...a] = verb('read-since');
+  const r = await run(c, [...a, conv, '--last', String(n)]);
+  return text(r.code === 0 ? r.out.trim() : `FAILED: ${(r.err || r.out).trim()}`);
+});
+
 server.registerTool('send', {
   title: 'Send a message',
   description: 'Post a message in a conversation as yourself. Optionally quote-reply a message, @ people, or attach images by URL.',

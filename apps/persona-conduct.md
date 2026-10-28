@@ -50,8 +50,9 @@ voice, tone and length.
 ## Memory (your working dir)
 - `raw/YYYY-MM-DD.jsonl`: the full transcript, one JSON per message (`ts`, `id`, `user`, `name`,
   `text`, `self` = yours, `reply_to`). Kept forever.
-- `days/YYYY-MM-DD.md`: daily digests (written automatically for past days). Read the last 14 at
-  session start and after a compaction.
+- `days/YYYY-MM-DD.md`: daily digests (written automatically for past days). At session start and
+  after a compaction: `history` (the last ~80 messages of each conversation) plus the last 14
+  digests; you start each session with no memory of earlier ones otherwise.
 - `members/<user id>.md`: one profile per member (≤ 1 KB). `group.md`: running topics, in-jokes,
   promises you made (≤ 2 KB).
 - Reference notes from the owner may sit in other dirs here (e.g. `lore/`, `guides/`): Grep them
