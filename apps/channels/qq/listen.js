@@ -8,12 +8,14 @@
 //                     of APP_TRIGGER_WORDS (comma list) — the session should answer
 //   type channel_message  anything else in a group — the session decides whether to join in
 //   type dm           a private chat
+// Users listed in <APP_MEMORY_DIR>/blocklist.txt (one id per line, `#` comments; the persona session
+// maintains it) are recorded but never wake the session; the owner (APP_OWNER) can't be blocked.
 // Also: `[ready]`, `[heartbeat] <ISO>` every 60 s and `[dropped] …` to stderr (the log).
 // Exits 1 when no frame arrived for 120 s (NapCat sends a heartbeat every 30 s); the guardian restarts it.
 //
 // Run from the runtime dir.
 import WebSocket from 'ws';
-import { WS, TOKEN, call, convOf, list, record, rowFromEvent, readRows, atIds, replyTo, render, files } from './onebot.mjs';
+import { WS, TOKEN, call, convOf, list, record, rowFromEvent, readRows, atIds, replyTo, render, files, blocked } from './onebot.mjs';
 
 process.on('unhandledRejection', (e) => console.error('[unhandledRejection]', e?.stack || e?.message || e));
 
@@ -72,6 +74,7 @@ function handle(ev) {
     return;
   }
   record(row);
+  if (blocked(row.user)) { console.error(`[blocked] user=${row.user} conv=${conv} — recorded, no wake`); return; }
   const text = row.text.toLowerCase();
   const mention = atIds(ev.message).includes(String(self))
     || (replyTo(ev.message) != null && ownIds.has(String(replyTo(ev.message))))

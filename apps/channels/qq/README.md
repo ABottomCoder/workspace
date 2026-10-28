@@ -57,6 +57,9 @@ to the group unless the user asks.
 - The session is woken once per burst (debounce `debounce_ms`, default 3 s): `app_mention` when
   @-mentioned, replied to, or named (`trigger_words`), else `channel_message`, and the persona
   session decides whether to join.
+- Blocklist: user ids in `<app dir>/memory/blocklist.txt` (the persona session adds people who
+  stay hostile after a warning) are recorded but never wake the session; the owner can't be
+  blocked. Unblock: delete the line.
 - `send`: quote-reply (`--thread <message id>`), `--at`, `--image <https url>`; capped by
   `send_cap_per_hour` (default 30) as a runaway fuse.
 - Memory digests (`days/`, `members/`, `group.md`) are written in the background for past days

@@ -69,6 +69,15 @@ export const files = (message) => (Array.isArray(message) ? message : [])
   .filter((s) => ['image', 'video', 'file', 'record'].includes(s.type))
   .map((s) => ({ id: String(s.data?.file_id || s.data?.file || ''), name: s.data?.file || s.data?.name || s.type, mimetype: s.type, size: Number(s.data?.file_size || 0), url: s.data?.url || null }));
 
+// ---- blocklist: <APP_MEMORY_DIR>/blocklist.txt, one user id first on each line; never the owner ----
+export function blocked(user) {
+  if (!process.env.APP_MEMORY_DIR || String(user) === String(process.env.APP_OWNER)) return false;
+  try {
+    return readFileSync(join(process.env.APP_MEMORY_DIR, 'blocklist.txt'), 'utf8').split('\n')
+      .some((l) => l.replace(/#.*/, '').trim().split(/\s+/)[0] === String(user));
+  } catch { return false; }
+}
+
 // ---- transcript ---------------------------------------------------------------------------
 export const transcriptDir = () => (process.env.APP_MEMORY_DIR ? join(process.env.APP_MEMORY_DIR, 'raw') : 'transcript');
 const day = (epoch) => {

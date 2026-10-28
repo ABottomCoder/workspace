@@ -6,10 +6,11 @@
 //   read-since.mjs <conv> --reset    forget the cursor
 //   read-since.mjs --list-direct     private-chat conversation ids in the cursor store
 // Rows: `[<epoch ts>] <who>(<qq>) #<message id>: <text>`, `bot` as who for the app's own posts;
-// `↩#<id>` marks a quote-reply. Answer a specific message with `send --thread <message id>`.
+// `↩#<id>` marks a quote-reply, `[blocked]` a user on the blocklist. Answer a specific message
+// with `send --thread <message id>`.
 // First read (no cursor): the last FIRST_READ (30) messages.
 import { readFileSync, writeFileSync } from 'node:fs';
-import { readRows } from './onebot.mjs';
+import { readRows, blocked } from './onebot.mjs';
 
 const CURSORS = './.read-cursors.json';
 const READ_MAX = Number(process.env.READ_MAX || 60);
@@ -35,7 +36,7 @@ const shown = cur ? rows.slice(-READ_MAX) : rows.slice(-FIRST_READ);
 if (shown.length < rows.length) console.log(`(${rows.length - shown.length} earlier new message(s) not shown — grep the transcript for them)`);
 if (rows.length === 0) console.log(`(no new messages since ${cur ? new Date(cur.ts * 1000).toISOString() : 'start'})`);
 for (const r of shown) {
-  console.log(`[${r.ts}] ${r.self ? 'bot' : `${r.name}(${r.user})`} #${r.id}${r.reply_to ? ` ↩#${r.reply_to}` : ''}: ${String(r.text).replace(/\n/g, ' ⏎ ')}`);
+  console.log(`[${r.ts}] ${r.self ? 'bot' : `${r.name}(${r.user})${blocked(r.user) ? ' [blocked]' : ''}`} #${r.id}${r.reply_to ? ` ↩#${r.reply_to}` : ''}: ${String(r.text).replace(/\n/g, ' ⏎ ')}`);
 }
 if (!process.argv.includes('--peek') && rows.length) {
   const last = rows[rows.length - 1].ts;
