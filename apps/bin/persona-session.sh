@@ -41,7 +41,7 @@ import json, sys
 s, bin_, ref, run, ch, digest = sys.argv[1:7]
 json.dump({"mcpServers": {"app": {"command": "node", "args": [f"{bin_}/app-mcp.mjs"],
            "env": {"APP_REF": ref, "APP_RUN": run, "APP_CHANNEL": ch}}}}, open(f"{s}/mcp.json", "w"), indent=1)
-allow = ["Read", "Grep", "Glob", "Write", "Edit"] + ([] if digest == "1" else ["WebSearch", "WebFetch", "mcp__app"])
+allow = ["Read", "Grep", "Glob", "Write", "Edit"] + ([] if digest == "1" else ["WebSearch", "WebFetch", "ToolSearch", "mcp__app"])
 settings = {"permissions": {"allow": allow, "defaultMode": "dontAsk"}}
 if digest != "1":
     settings["hooks"] = {"Stop": [{"hooks": [{"type": "command", "command": f"bash '{bin_}/persona-stop-hook.sh' '{run}'", "timeout": 10}]}]}
@@ -73,5 +73,6 @@ if [ "$(listener_count "$APP_RUN/listener.log")" -eq 0 ]; then
 fi
 export MCP_TOOL_TIMEOUT=900000   # wait_event blocks up to 14 min
 [ "$HEADLESS" = 1 ] && { set -- -p --output-format stream-json --verbose "$@"; exec >> "$S/out.jsonl" 2>> "$S/err.log"; }
-claude "${COMMON[@]}" --tools "Read,Grep,Glob,Write,Edit,WebSearch,WebFetch" --mcp-config "$S/mcp.json" "$@" -- \
+# ToolSearch: WebSearch/WebFetch are deferred tools, loaded through it; it can load only tools in this list
+claude "${COMMON[@]}" --tools "Read,Grep,Glob,Write,Edit,WebSearch,WebFetch,ToolSearch" --mcp-config "$S/mcp.json" "$@" -- \
   "Start now: read group.md and the last 14 files in days/ if they exist, then call wait_event and keep handling events."
