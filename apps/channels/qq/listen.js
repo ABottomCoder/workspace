@@ -4,8 +4,9 @@
 // is woken once per BURST, not once per message: after a message, wait until the conversation has
 // been quiet for APP_DEBOUNCE_MS (default 3000; max APP_DEBOUNCE_MAX_MS, 8000, from the first
 // message), then emit one `[chat-event]` carrying the last message and `burst` = message count.
-//   type app_mention  the burst @-mentions the app, replies to one of its messages, or contains one
-//                     of APP_TRIGGER_WORDS (comma list) — the session should answer
+//   type app_mention  the burst @-mentions the app, replies to one of its messages, contains one
+//                     of APP_TRIGGER_WORDS (comma list), or comes from someone the app answered in
+//                     the last APP_FOLLOWUP_SECS (300) — a follow-up without @ — the session should answer
 //   type channel_message  anything else in a group — the session decides whether to join in
 //   type dm           a private chat
 // Friend requests and group invites are rejected (except from APP_OWNER).
@@ -28,9 +29,16 @@ const QUIET = Number(process.env.APP_DEBOUNCE_MS || 3000);
 const MAX = Number(process.env.APP_DEBOUNCE_MAX_MS || 8000);
 
 let self = null;
+const FOLLOWUP = Number(process.env.APP_FOLLOWUP_SECS || 300) * 1000;
 const ownIds = new Set();          // message ids the app posted (to spot replies to it)
 const seen = new Set();            // message ids already recorded (backfill + live overlap)
-for (const r of readRows(2)) { seen.add(r.id); if (r.self) ownIds.add(r.id); }
+const userOf = new Map();          // message id -> sender, to know whom the app answered
+const engaged = new Map();         // user -> when the app last answered them (quote-reply or @)
+function noteAnswer(row) {
+  const to = [row.reply_to && userOf.get(String(row.reply_to)), ...(row.ats || [])].filter(Boolean);
+  for (const u of to) engaged.set(String(u), row.ts * 1000);
+}
+for (const r of readRows(2)) { seen.add(r.id); userOf.set(r.id, r.user); if (r.self) { ownIds.add(r.id); noteAnswer(r); } }
 
 const bursts = new Map();          // conv -> {first, timer, count, mention, last}
 function emit(conv) {
@@ -44,15 +52,15 @@ function emit(conv) {
   }
   process.stdout.write(`[chat-event] ${JSON.stringify({
     channel: 'qq', conv, conv_name: ev.group_name || null, type, user: String(ev.user_id), user_name: ev.sender?.card || ev.sender?.nickname || null,
-    text: render(ev.message), ts: String(ev.message_id), thread: null, burst: b.count, mentioned: b.mention,
+    text: render(ev.message), ts: String(ev.message_id), thread: null, burst: b.count, mentioned: b.mention, followup: b.followup,
     files: files(ev.message), raw: ev,
   })}\n`);
 }
 function queue(conv, ev, mention) {
   const now = Date.now();
-  const b = bursts.get(conv) || { first: now, count: 0, mention: false };
+  const b = bursts.get(conv) || { first: now, count: 0, mention: false, followup: false };
   clearTimeout(b.timer);
-  b.count += 1; b.mention ||= mention; b.last = ev;
+  b.count += 1; b.mention ||= !!mention; b.followup ||= mention === 'followup'; b.last = ev;
   const wait = Math.max(0, Math.min(mention ? QUIET / 2 : QUIET, b.first + MAX - now));
   b.timer = setTimeout(() => emit(conv), wait);
   bursts.set(conv, b);
@@ -81,8 +89,9 @@ function handle(ev) {
   if (seen.has(id)) return;
   seen.add(id);
   const row = rowFromEvent(ev, self);
+  userOf.set(id, row.user);
   if (row.self) {                                    // own posts never wake the session; `send` records
-    ownIds.add(id);                                  // them itself, so only posts made elsewhere (the
+    ownIds.add(id); noteAnswer({ ...row, ats: atIds(ev.message) });                                  // them itself, so only posts made elsewhere (the
     if (!readRows(1).some((r) => r.id === id)) record(row);   // account's own QQ client) are added here
     return;
   }
@@ -91,7 +100,8 @@ function handle(ev) {
   const text = row.text.toLowerCase();
   const mention = atIds(ev.message).includes(String(self))
     || (replyTo(ev.message) != null && ownIds.has(String(replyTo(ev.message))))
-    || TRIGGERS.some((w) => text.includes(w));
+    || TRIGGERS.some((w) => text.includes(w))
+    || ((engaged.get(row.user) || 0) > Date.now() - FOLLOWUP && 'followup');
   queue(conv, ev, mention);
 }
 

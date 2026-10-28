@@ -55,7 +55,8 @@ to the group unless the user asks.
   with `memory: on`, else `.runtime/transcript/`). Messages from the gap after a reconnect are
   backfilled (no wake).
 - The session is woken once per burst (debounce `debounce_ms`, default 3 s): `app_mention` when
-  @-mentioned, replied to, or named (`trigger_words`), else `channel_message`, and the persona
+  @-mentioned, replied to, named (`trigger_words`), or messaged by someone it answered in the last
+  5 min (a follow-up without @, `followup: true`), else `channel_message`, and the persona
   session decides whether to join.
 - Blocklist: user ids in `<app dir>/memory/blocklist.txt` (the persona session adds people who
   stay hostile after a warning) are recorded but never wake the session; the owner can't be
