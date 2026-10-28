@@ -99,7 +99,7 @@ server.registerTool('send', {
     text: z.string().default('').describe('Message text. Plain text, no markdown.'),
     reply_to: z.string().optional().describe('Message id (#id in the transcript) to quote-reply.'),
     at: z.array(z.string()).default([]).describe('User ids to @.'),
-    images: z.array(z.string().url()).max(4).default([]).describe('Image URLs (https) to attach.'),
+    images: z.array(z.string().url().regex(/^https:\/\//, 'https only')).max(4).default([]).describe('Image URLs (https only) to attach.'),
   },
 }, async ({ conv, text: body, reply_to, at, images }) => {
   if (!body && !images.length) return text('nothing to send');

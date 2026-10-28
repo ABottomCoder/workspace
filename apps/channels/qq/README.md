@@ -10,23 +10,26 @@ an older, normally used account is far safer. The official QQ bot API would be a
 ## Start: "启动qq机器人，使用 <QQ号>" / "start the qq bot with account <n>"
 
 Run from the main dir, in the session that asked. Nothing auto-starts; the bot lives as long as
-that session's background tasks.
+the process started in step 3.
 
 1. `apps/channels/qq/napcat.sh up <QQ号>`: finds the app by `qq_account:`, starts its NapCat
    container, waits for the login. If it prints "QR login needed", tell the user to scan the
    opened `qrcode.png` with that account's phone QQ and wait (3 min). Don't loop on failures: a
    frozen account must be unlocked by the user on the phone first.
 2. `apps/bin/app up <co>/<id>` (owner comes from `app.yaml`).
-3. `run_in_background`: `apps/bin/app run <co>/<id>` (write end: listener + transcript).
-4. Persona app (`persona:` set): `run_in_background`: `apps/bin/app session <co>/<id> --headless`,
-   the restricted session that chats (apps/RULES.md §12). Its transcript:
-   `<app dir>/.runtime/session/out.jsonl`. If the user wants to watch it instead, they run
-   `apps/bin/app session <co>/<id>` in their own terminal and you skip this step.
+3. Persona app (`persona:` set): the restricted session that chats (apps/RULES.md §12) also owns
+   the write end (listener + transcript) for its lifetime, so one process is the whole bot:
+   - the user watches it (preferred): open a terminal for them, e.g. on macOS
+     `osascript -e 'tell app "Terminal" to do script "cd <main dir> && apps/bin/app session <co>/<id>"'`;
+   - or `run_in_background`: `apps/bin/app session <co>/<id> --headless` (transcript in
+     `<app dir>/.runtime/session/out.jsonl`).
+   This session never chats itself and never runs the listener for a persona app.
    A plain work app (no persona) is run by this session itself: `.claude/skills/app`.
+4. Reading what it did: `<app dir>/memory/raw/` (chat) and the session transcript.
 5. Check: `apps/bin/app status <co>/<id>` shows UP; tell the user it is live.
 
-**Stop** ("停止qq机器人"): `apps/bin/app down <co>/<id>` (listener, read end, persona session),
-then `apps/channels/qq/napcat.sh down <QQ号>`. The login is kept for next time.
+**Stop** ("停止qq机器人"): close its terminal, or `apps/bin/app down <co>/<id>` (persona session,
+listener), then `apps/channels/qq/napcat.sh down <QQ号>`. The login is kept for next time.
 
 **Test sends** go to the owner in private (`app send <co>/<id> --conv u<owner qq> "…"`), never
 to the group unless the user asks.

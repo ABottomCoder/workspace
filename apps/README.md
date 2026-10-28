@@ -79,9 +79,9 @@ Requirements: Node 20+, bash, python3, `lsof`, `pgrep`. First time: `cd apps && 
 ## Persona app — a member of a group chat (RULES.md §12)
 
 Set `persona:` (and usually `memory: on`) in `app.yaml`, then from an ordinary session:
-`app up <id>`, the write end (`app run <id>`, run_in_background), then the chatting session:
-`app session <id> --headless` (run_in_background) or `app session <id>` in a terminal of the
-user's. It is a restricted Claude Code session (no Bash, files only in `<app dir>/memory/`) that
+`app up <id>`, then the chatting session, which also owns the write end while it runs:
+`app session <id>` in a terminal of the user's, or `app session <id> --headless`
+(run_in_background). It is a restricted Claude Code session (no Bash, files only in `<app dir>/memory/`) that
 waits on the chat through the app MCP server and decides when to speak. Stop: `app down <id>`.
 Memory digests for past days run in the background while it is up (`app digest <id>` by hand).
 QQ apps: the full start/stop procedure is in `channels/qq/README.md`.

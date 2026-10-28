@@ -11,8 +11,8 @@
 #                                                          transcript in <runtime>/session/out.jsonl
 #   persona-session.sh --digest <co>/<id> [YYYY-MM-DD]     headless: write that day's digest and
 #                                                          update profiles (default: yesterday)
-# Usually via `app session <id>` / `app digest <id>`. The write end must already run (app run /
-# install-service). Model: app.yaml `model:` (default sonnet).
+# Usually via `app session <id>` / `app digest <id>`. If no write end runs (app run / service), the
+# session starts one and stops it when it exits. Model: app.yaml `model:` (default sonnet).
 set -u
 . "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 DIGEST=0; HEADLESS=0
@@ -54,9 +54,16 @@ if [ "$DIGEST" = 1 ]; then
   # --tools and --mcp-config take several values: "--" ends them, or they swallow the prompt
   exec claude -p "${COMMON[@]}" --tools "Read,Grep,Glob,Write,Edit" -- "$(sed "s/{{DATE}}/$d/g" "$APPS_ROOT/persona-digest.md")" < /dev/null
 fi
-[ "$(listener_count "$APP_RUN/listener.log")" -gt 0 ] || die "write end not running for $APP_ID: start it (app run $APP_REF, run in background) or app install-service $APP_ID"
-export MCP_TOOL_TIMEOUT=900000   # wait_event blocks up to 14 min
 pgrep -f "claude .*--settings $S/settings.json" >/dev/null && die "a session for $APP_ID is already running (app down $APP_REF stops it)"
+# The write end: if none runs, this session owns one for its lifetime (one terminal = the whole app).
+GUARD=""
+if [ "$(listener_count "$APP_RUN/listener.log")" -eq 0 ]; then
+  "$APPS_BIN/guardian.sh" "$APP_RUN" >> "$APP_RUN/guardian.out" 2>&1 & GUARD=$!
+  trap '[ -n "$GUARD" ] && kill "$GUARD" 2>/dev/null' EXIT
+  for _ in 1 2 3 4 5 6 7 8 9 10; do sleep 1; [ "$(listener_count "$APP_RUN/listener.log")" -gt 0 ] && break; done
+  [ "$(listener_count "$APP_RUN/listener.log")" -gt 0 ] || die "write end did not start: see $APP_RUN/listener.log"
+fi
+export MCP_TOOL_TIMEOUT=900000   # wait_event blocks up to 14 min
 [ "$HEADLESS" = 1 ] && { set -- -p --output-format stream-json --verbose "$@"; exec >> "$S/out.jsonl" 2>> "$S/err.log"; }
-exec claude "${COMMON[@]}" --tools "Read,Grep,Glob,Write,Edit,WebSearch,WebFetch" --mcp-config "$S/mcp.json" "$@" -- \
+claude "${COMMON[@]}" --tools "Read,Grep,Glob,Write,Edit,WebSearch,WebFetch" --mcp-config "$S/mcp.json" "$@" -- \
   "Start now: read group.md and the last 14 files in days/ if they exist, then call wait_event and keep handling events."
