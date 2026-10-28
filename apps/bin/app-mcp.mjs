@@ -89,7 +89,7 @@ async function waitOnce(max_wait_s) {
   const parts = [];
   for (const conv of new Set(lines.map((l) => { try { return JSON.parse(l.replace(/^\[\w+-event\] /, '')).conv; } catch { return null; } }).filter(Boolean))) {
     const ev = JSON.parse(lines.filter((l) => l.includes(`"conv":"${conv}"`)).pop().replace(/^\[\w+-event\] /, ''));
-    parts.push(`EVENT conv=${conv} type=${ev.type}${ev.burst ? ` burst=${ev.burst}` : ''}${ev.followup ? ' (a follow-up from someone you just answered)' : ev.mentioned ? ' (you were addressed)' : ''} last_message_id=${ev.ts}\n`
+    parts.push(`EVENT conv=${conv} type=${ev.type}${ev.burst ? ` burst=${ev.burst}` : ''}${ev.mentioned ? ' (you were addressed)' : ''}${ev.followup ? ' (includes someone you answered a few minutes ago: judge from the content whether it is for you)' : ''} last_message_id=${ev.ts}\n`
       + `NEW MESSAGES:\n${await readSince(conv, false)}`);
   }
   return text(parts.join('\n\n'));

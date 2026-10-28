@@ -4,9 +4,10 @@
 // is woken once per BURST, not once per message: after a message, wait until the conversation has
 // been quiet for APP_DEBOUNCE_MS (default 3000; max APP_DEBOUNCE_MAX_MS, 8000, from the first
 // message), then emit one `[chat-event]` carrying the last message and `burst` = message count.
-//   type app_mention  the burst @-mentions the app, replies to one of its messages, contains one
-//                     of APP_TRIGGER_WORDS (comma list), or comes from someone the app answered in
-//                     the last APP_FOLLOWUP_SECS (300) — a follow-up without @ — the session should answer
+//   type app_mention  the burst @-mentions the app, replies to one of its messages, or contains one
+//                     of APP_TRIGGER_WORDS (comma list) — the session should answer
+//   followup: true    (any type) the burst has a message from someone the app answered in the last
+//                     APP_FOLLOWUP_SECS (300): context only — the session judges whether it is for it
 //   type channel_message  anything else in a group — the session decides whether to join in
 //   type dm           a private chat
 // Friend requests and group invites are rejected (except from APP_OWNER).
@@ -56,11 +57,11 @@ function emit(conv) {
     files: files(ev.message), raw: ev,
   })}\n`);
 }
-function queue(conv, ev, mention) {
+function queue(conv, ev, mention, followup) {
   const now = Date.now();
   const b = bursts.get(conv) || { first: now, count: 0, mention: false, followup: false };
   clearTimeout(b.timer);
-  b.count += 1; b.mention ||= !!mention; b.followup ||= mention === 'followup'; b.last = ev;
+  b.count += 1; b.mention ||= mention; b.followup ||= followup; b.last = ev;
   const wait = Math.max(0, Math.min(mention ? QUIET / 2 : QUIET, b.first + MAX - now));
   b.timer = setTimeout(() => emit(conv), wait);
   bursts.set(conv, b);
@@ -100,9 +101,8 @@ function handle(ev) {
   const text = row.text.toLowerCase();
   const mention = atIds(ev.message).includes(String(self))
     || (replyTo(ev.message) != null && ownIds.has(String(replyTo(ev.message))))
-    || TRIGGERS.some((w) => text.includes(w))
-    || ((engaged.get(row.user) || 0) > Date.now() - FOLLOWUP && 'followup');
-  queue(conv, ev, mention);
+    || TRIGGERS.some((w) => text.includes(w));
+  queue(conv, ev, mention, (engaged.get(row.user) || 0) > Date.now() - FOLLOWUP);
 }
 
 // Messages that arrived while disconnected (the guardian recycles the listener): record them, no wake.
