@@ -18,7 +18,15 @@ set -u
 DIGEST=0; HEADLESS=0
 case "${1:-}" in --digest) DIGEST=1; shift;; --headless) HEADLESS=1; shift;; esac
 resolve_app "${1:?usage: persona-session.sh [--digest] <co>/<id> [args…]}"; shift
+if ! command -v claude >/dev/null; then   # a terminal's non-interactive shell may not load the PATH from .zshrc
+  for d in "$HOME/.local/bin" "$HOME/.claude/local" /opt/homebrew/bin /usr/local/bin; do [ -x "$d/claude" ] && { PATH="$d:$PATH"; break; }; done
+fi
 command -v claude >/dev/null || die "claude CLI not on PATH"
+# Started from (or from a terminal launched by) another Claude Code session, the environment carries
+# that session's markers: CLAUDE_CODE_CHILD_SESSION turns transcript saving off, the messaging socket
+# points back at the parent. This session must be independent: drop them all.
+for v in $(env | grep -oE '^(CLAUDECODE|CLAUDE_CODE_[A-Z_]*|CLAUDE_PID|CLAUDE_EFFORT)=' | tr -d =); do unset "$v"; done
+[ "${TERM_PROGRAM:-}" = Apple_Terminal ] && unset COLORTERM   # Terminal.app has no truecolor; an inherited value garbles the UI
 ensure_node
 persona=$(field "$APP_CONF" persona); [ -n "$persona" ] || die "$APP_ID has no persona: in app.yaml (persona apps only)"
 case "$persona" in /*) ;; *) persona="$APP_HOME/$persona";; esac

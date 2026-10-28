@@ -19,8 +19,11 @@ the process started in step 3.
 2. `apps/bin/app up <co>/<id>` (owner comes from `app.yaml`).
 3. Persona app (`persona:` set): the restricted session that chats (apps/RULES.md §12) also owns
    the write end (listener + transcript) for its lifetime, so one process is the whole bot:
-   - the user watches it (preferred): open a terminal for them, e.g. on macOS
-     `osascript -e 'tell app "Terminal" to do script "cd <main dir> && apps/bin/app session <co>/<id>"'`;
+   - the user watches it (preferred): open a window in the user's terminal app (iTerm2 here, not
+     Terminal.app), e.g. `osascript -e 'tell application "iTerm" to create window with default
+     profile command "/bin/zsh -lc \"cd <main dir> && apps/bin/app session <co>/<id>\""'`. The
+     window closes when the session exits; if it vanishes at once, run the same command in a
+     terminal to see why;
    - or `run_in_background`: `apps/bin/app session <co>/<id> --headless` (transcript in
      `<app dir>/.runtime/session/out.jsonl`).
    This session never chats itself and never runs the listener for a persona app.

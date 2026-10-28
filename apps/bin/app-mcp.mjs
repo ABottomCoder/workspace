@@ -70,6 +70,13 @@ server.registerTool('wait_event', {
     + 'then call it again. Call it again right after handling each event — it is how you stay present in the chat.',
   inputSchema: { max_wait_s: z.number().int().min(30).max(840).default(600).describe('Seconds to wait before returning "no event".') },
 }, async ({ max_wait_s }) => {
+  // One wait at a time: two wait-event.sh runs share one offset and would deliver an event twice.
+  if (waiting) return text('a wait_event call is already running — call it once, not in parallel.');
+  waiting = true;
+  try { return await waitOnce(max_wait_s); } finally { waiting = false; }
+});
+let waiting = false;
+async function waitOnce(max_wait_s) {
   maybeDigest();
   const r = await run('bash', [join(BIN, 'wait-event.sh'), APP_REF], { timeoutMs: max_wait_s * 1000 });
   if (r.timedOut) return text(`no event in ${max_wait_s}s — call wait_event again.`);
@@ -83,7 +90,7 @@ server.registerTool('wait_event', {
       + `NEW MESSAGES:\n${await readSince(conv, false)}`);
   }
   return text(parts.join('\n\n'));
-});
+}
 
 server.registerTool('read', {
   title: 'Read a conversation',
