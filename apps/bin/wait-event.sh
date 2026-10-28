@@ -123,11 +123,12 @@ while :; do
     sleep 8                          # let the new socket come up first
     found=""
     for ch in $CATCHUP; do
-      # drop the app's own replies ("bot" = posted with the app's credentials) so they never wake anyone
+      # drop the app's own replies ("bot" = posted with the app's credentials, optionally followed by
+      # " #<message id>" as the qq channel prints it) so they never wake anyone
       # --peek: never advance the cursor here. The woken session's own read-since advances it after
       # it has actually seen the messages; advancing here once lost a message when this process was
       # killed (OOM) between read-since and printf. Worst case now = a replay, which the age stamp shows.
-      out=$(cd "$DIR" && $READ_SINCE "$ch" --peek 2>/dev/null | grep -E '^\[[0-9.]+\]' | grep -viE "^\[[0-9.]+\]( +↳)? (bot|$BOT): ")
+      out=$(cd "$DIR" && $READ_SINCE "$ch" --peek 2>/dev/null | grep -E '^\[[0-9.]+\]' | grep -viE "^\[[0-9.]+\]( +↳)? (bot|$BOT)( #[^:]*)?: ")
       [ -z "$out" ] && continue
       # Catch-up rows can be weeks old (a cursor that never advanced) yet look exactly like a
       # fresh question, so stamp each row with its UTC time and flag old batches loudly.
@@ -136,7 +137,7 @@ import sys, time, re
 now = time.time(); oldest = now
 rows = []
 for l in sys.stdin:
-    m = re.match(r"\[(\d+)\.\d+\]", l)
+    m = re.match(r"\[(\d+)(?:\.\d+)?\]", l)
     ts = int(m.group(1)) if m else now
     oldest = min(oldest, ts)
     rows.append(time.strftime("%Y-%m-%d %H:%MZ ", time.gmtime(ts)) + l.rstrip("\n"))

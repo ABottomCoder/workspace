@@ -85,6 +85,14 @@ async function waitOnce(max_wait_s) {
   if (r.timedOut) return text(`no event in ${max_wait_s}s — call wait_event again.`);
   const lines = r.out.split('\n').filter((l) => /^\[(chat|slack)-event\] /.test(l));
   if (r.code === 3) return text(`WARNING: the listener was not receiving (${r.out.trim()}). Messages from that gap may be missing.\nCall wait_event again.`);
+  // Recycle catch-up (wait-event.sh peeks, never advances): read for real here, or the same rows
+  // come back on every recycle.
+  const caught = [...r.out.matchAll(/^\[catchup (\S+) /gm)].map((m) => m[1]);
+  if (!lines.length && caught.length) {
+    const parts = [];
+    for (const conv of new Set(caught)) parts.push(`CATCH-UP conv=${conv} (written while the listener reconnected)\nNEW MESSAGES:\n${await readSince(conv, false)}`);
+    return text(parts.join('\n\n'));
+  }
   if (!lines.length) return text(`no event (${(r.out + r.err).trim().slice(0, 300) || `exit ${r.code}`}) — call wait_event again.`);
   const parts = [];
   for (const conv of new Set(lines.map((l) => { try { return JSON.parse(l.replace(/^\[\w+-event\] /, '')).conv; } catch { return null; } }).filter(Boolean))) {
