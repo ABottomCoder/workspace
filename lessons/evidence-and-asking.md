@@ -20,16 +20,16 @@ What counts as evidence before stating a fact, a diagnosis or a limit, and what 
 **Rule:** Before speaking, trace the sentence back to what you observed and verify the extra part separately. Causal words (blocked, prevented, fixed, stuck) need their own proof. For a root-cause or capacity claim, name the deciding measurement and check you can see it; if not, call it a hypothesis, give the confirming query or repro, and ask whoever has the data (their data wins). Before calling something stuck, know its normal duration or say you don't; if you raised a false alarm, correct it to the same person with the number you learned. Before advising a setting change, read the setting's recorded state. For UI bugs, repro live and repro the second occurrence (once-only and dedupe logic break on repeat). Hold "it is safe / covered" to a higher bar than "it is broken". Do not rely on `grep -q`/`grep -c` exit codes for absence guards; never reuse build artefact filenames; compare the deployed checksum with the file you meant to ship.
 **Seen:** 5
 
+### Docs, comments and memory are hints; confirm against live code and config
+**Mistake:** Quoted a user-facing limit from outdated memory; told a teammate a flagged behaviour was unchanged from a stale doc; said a script deploys no worker, quoting a comment, when the default deployed one; explained a feature flag by its name and described the wrong, adjacently named component; told the user a project "still runs on CPU torch" from a note's env snapshot, when they had long since moved it to GPU elsewhere.
+**Root cause:** Docs, comments and memory are point-in-time and drift; matching on meaning instead of the identifier.
+**Rule:** Before stating a figure that gates money, access or limits, or confirming a behaviour someone asked about, grep current code and production config, or cite a live probe. For flag/preset/id questions, grep the exact identifier across the repo first; adjacent names can have very different risk. For project status, check config and artifacts (env files, test outputs), not the README, which records plans, not outcomes. A note naming an environment says where something ran once, not how the user runs it now: probe it and say "the env I found is X", not "the project uses X".
+**Seen:** 5
+
 ### Test an access or reachability limit before stating it
 **Mistake:** Told teammates "I have no production access", "I cannot open PRs", "prod is unreachable", and asked for new console access, each after trying one key, one env var or one route; working keys, token files and scripts that had used the access already existed.
 **Root cause:** One failed attempt, a doc note or a predecessor's words decayed into a "principle", sometimes with an invented rationale.
 **Rule:** Before saying you lack access or asking for it, grep logs, notes and scripts for the command, key or token that worked before, check token files, and try existing keys against the host's direct address. Then test it (ssh, curl, one read-only query). Never attach a justification to a limit whose origin you have not seen. If you find unexpected access, disclose it at once with what you did with it.
-**Seen:** 4
-
-### Docs, comments and memory are hints; confirm against live code and config
-**Mistake:** Quoted a user-facing limit from outdated memory; told a teammate a flagged behaviour was unchanged from a stale doc; said a script deploys no worker, quoting a comment, when the default deployed one; explained a feature flag by its name and described the wrong, adjacently named component.
-**Root cause:** Docs, comments and memory are point-in-time and drift; matching on meaning instead of the identifier.
-**Rule:** Before stating a figure that gates money, access or limits, or confirming a behaviour someone asked about, grep current code and production config, or cite a live probe. For flag/preset/id questions, grep the exact identifier across the repo first; adjacent names can have very different risk. For project status, check config and artifacts (env files, test outputs), not the README, which records plans, not outcomes.
 **Seen:** 4
 
 ### Verify any claim you relay, inherit or summarize

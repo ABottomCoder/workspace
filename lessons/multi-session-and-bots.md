@@ -2,16 +2,16 @@
 
 Running chat-bot sessions and parallel agent sessions: listeners, identities, mentions, peers, and shared files and processes.
 
+### A listener is alive only if real events arrive; backfill after any gap
+**Mistake:** Listeners reconnected, logged "ready" and kept writing heartbeats while delivering no events for over an hour; one resume re-armed only the log reader while the writer was dead; another ran the supervisor as the reader; a recovery read piped through `tail` advanced the cursor past a real message and "nothing missed" was reported; a background "wait for next message" loop used a relative log path, ran from another working directory, failed its `grep` every 5 s for hours and never fired while five messages arrived.
+**Root cause:** Health was measured by process-up and log freshness (heartbeats count as writes); reader and writer chains were confused; streaming sockets do not replay missed events; a cursor-advancing read consumes what truncated output hides; a wait loop treated a read error as "no new event" and its output was never read after start.
+**Rule:** Liveness is the time of the last real event compared with the conversation's latest timestamp from the API. A background watcher uses absolute paths, exits non-zero on any read error instead of looping, and its output is read once a few seconds after start. After any resume, check that a live writer chain (supervisor, listener) is writing the log and a separate reader is tailing it; end-to-end proof is a real inbound message, not a self-send or a "ready" line. After any reconnect, and before saying "nothing new", backfill from the history API and read its full output, never truncated; if the cursor moved but output looks empty, refetch the gap by time range. Watch the listener log for disconnect lines so a disconnect itself triggers backfill.
+**Seen:** 6
+
 ### Take identities from the registry and notify with a real mention
 **Mistake:** A bot ran a whole session with its own user ID swapped with a peer's, answering mentions meant for the peer; replies landed in the wrong thread and tagged a look-alike ID; answers to a bot peer were posted without a mention, so it never received them and asked three times; plain-text "@name" notified no one.
 **Root cause:** IDs were recalled from memory among similar-looking ones, and a reply felt addressed even though the peer's listener wakes only on mentions or DMs.
 **Rule:** Verify your own and peers' IDs against the authoritative registry at session start; respond only to mentions of your own ID. Reply in the mentioner's own thread, using the ID from the message's sender field. Every message a bot peer must act on carries a real mention token (e.g. `<@ID>`). If a peer repeats a question you think you answered, check whether your answer mentioned them. "Sent" is not "reached the right person in the right place".
-**Seen:** 5
-
-### A listener is alive only if real events arrive; backfill after any gap
-**Mistake:** Listeners reconnected, logged "ready" and kept writing heartbeats while delivering no events for over an hour; one resume re-armed only the log reader while the writer was dead; another ran the supervisor as the reader; a recovery read piped through `tail` advanced the cursor past a real message and "nothing missed" was reported.
-**Root cause:** Health was measured by process-up and log freshness (heartbeats count as writes); reader and writer chains were confused; streaming sockets do not replay missed events; a cursor-advancing read consumes what truncated output hides.
-**Rule:** Liveness is the time of the last real event compared with the conversation's latest timestamp from the API. After any resume, check that a live writer chain (supervisor, listener) is writing the log and a separate reader is tailing it; end-to-end proof is a real inbound message, not a self-send or a "ready" line. After any reconnect, and before saying "nothing new", backfill from the history API and read its full output, never truncated; if the cursor moved but output looks empty, refetch the gap by time range. Watch the listener log for disconnect lines so a disconnect itself triggers backfill.
 **Seen:** 5
 
 ### Treat any location others might write to as shared

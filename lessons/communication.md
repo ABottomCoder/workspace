@@ -3,10 +3,10 @@
 How to write, address, deliver and frame messages and documents so the right person gets an accurate, usable picture.
 
 ### Write for the actual reader: their language, plain words, correct pronouns
-**Mistake:** Replied in the team's default language to someone who needs another one, passed a report on to a teammate who cannot read its language, used insider slang a colleague did not know, and guessed a colleague's gender from their name.
+**Mistake:** Replied in the team's default language to someone who needs another one, passed a report on to a teammate who cannot read its language, used insider slang a colleague did not know, guessed a colleague's gender from their name, and drifted into English mid-conversation with the user after English tool output, having skipped their profile on a quick question.
 **Root cause:** Language and wording were chosen by surface (DM vs channel, "it is relevant to them") instead of by the person reading it.
-**Rule:** The addressee decides the language on every surface; passing content on is composing, so re-read the content as the second reader (their language, the context they already have) before sending. Describe mechanisms in plain words, not slang. Use stated pronouns only; otherwise use they/them or the name. Product-facing output (tickets, PRs, UI strings, code, logs, messages to others) stays in the organisation's working language; a private-chat language never leaks into it.
-**Seen:** 5
+**Rule:** The addressee decides the language on every surface; passing content on is composing, so re-read the content as the second reader (their language, the context they already have) before sending. Describe mechanisms in plain words, not slang. Use stated pronouns only; otherwise use they/them or the name. Product-facing output (tickets, PRs, UI strings, code, logs, messages to others) stays in the organisation's working language; a private-chat language never leaks into it. In chat with the user, read `user/profile.md` at session start even for a quick off-topic question, and keep its conversation language on every turn: English tool output or English sources must not pull replies into English mid-conversation.
+**Seen:** 6
 
 ### Read the thread before sending, and never commit on someone's behalf
 **Mistake:** An assistant auto-replied to a personal invitation for the user without reading the conversation, and messages were posted that duplicated something already sent.
