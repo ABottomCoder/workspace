@@ -51,6 +51,12 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 - The same holds for terminal windows opened by script (`osascript ... iTerm ... command "..."`): the command runs without rc-file PATH, so a bare `claude`/`node` fails and the window closes at once, looking like "nothing started". Use absolute paths (`$HOME/.local/bin/claude`), keep the window open on failure (`; read`), open one window first and confirm the process with `pgrep` before opening the rest. Done twice in one session.
 **Seen:** 3
 
+### Windows: Python's GBK default breaks non-ASCII on stdout (loudly) and stdin (silently)
+**Mistake:** CLI scripts printing Chinese, emoji or box-drawing characters died with `UnicodeEncodeError` on a GBK console; `conda run` re-encoded output the same way. Worse, hooks reading their JSON input with `json.load(sys.stdin)` decoded UTF-8 as GBK: the last byte of a CJK character paired with the escaping backslash after it (`。\"`, `中\\`), the JSON broke, and the `except` path quietly skipped the check (a leak/routing hook, an eval guard that then blocked a legitimate read, a chat inbox that dropped messages).
+**Root cause:** On Windows, Python's stdin, stdout and `open()` default to the locale code page (GBK here), not UTF-8; a decode error caught as "bad input" looks like nothing happened.
+**Rule:** Hook and pipe input is UTF-8: read it as `json.loads(sys.stdin.buffer.read().decode("utf-8"))`; for output, `sys.stdout.reconfigure(encoding="utf-8", errors="replace")`; for a family of bash scripts, `export PYTHONUTF8=1` once in their shared lib. Test with CJK text next to a quote or backslash, and make the test's own producer write UTF-8 (it inherits the same default). With rich, `Console(legacy_windows=False)`. Call the environment's interpreter by absolute path instead of `conda run`.
+**Seen:** 3
+
 ### zsh does not word-split unquoted variables
 **Mistake:** Monitors built as `R="ssh ..."; $R cmd` or `for s in $LIST` ran the whole string as one command or one loop item; one died silently, another raised a plausible false alarm about production.
 **Root cause:** Relied on bash-style word splitting and did not sweep for the same construct after it bit once.
@@ -73,12 +79,6 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 **Mistake:** Per-instance task config (listen settings, owner, prompts) was committed into a shared tooling repo, and a plugin meant to be shareable was written with one machine's paths; a suggested restart command would have discarded the running session.
 **Root cause:** Treated one instance as a fixed identity, never tested from a second location, and did not check a command's side effects before suggesting it.
 **Rule:** Commit to shared tooling only what holds for every user and task; per-user settings, contacts and history stay local. Ask "would a colleague using this for a different task want this?" Verify anything labelled portable from a second path or machine. Before suggesting a command, state side effects, especially ones that end the session or discard state.
-**Seen:** 2
-
-### Windows: non-UTF-8 console code pages crash scripts that print non-ASCII
-**Mistake:** CLI scripts printing Chinese, emoji or box-drawing characters died with `UnicodeEncodeError` on a GBK console; `conda run` re-encoded output the same way.
-**Root cause:** Python's stdout follows the console code page on Windows.
-**Rule:** At the top of Windows CLI scripts: `sys.stdout.reconfigure(encoding="utf-8", errors="replace")` (and stderr); with rich, `Console(legacy_windows=False)`; or run with `PYTHONIOENCODING=utf-8` / `-X utf8`. Call the environment's interpreter by absolute path instead of `conda run`.
 **Seen:** 2
 
 ### Windows: asyncio subprocesses need the Proactor loop (uvicorn `--reload` defeats it), and killed servers leave children holding the port
