@@ -405,7 +405,7 @@ if kind == "project":
 else:
     pd = os.path.dirname(d)   # a sub-item (<ID>/<sub>) points at its parent instead of inlining it
     if os.path.basename(pd) not in ("tickets", "work") and os.path.exists(os.path.join(pd, "STATE.md")):
-        head += f"Sub-item of {os.path.relpath(pd, root)}: read its HANDOFF.md only for batch-wide facts.\n\n"
+        head += f"Sub-item of {os.path.relpath(pd, root).replace(os.sep, '/')}: read its HANDOFF.md only for batch-wide facts.\n\n"
     rf = H.role_file(d, role)
     raw, label, warn = read(rf).strip(), f"handoff/{role}.md", []
     if not raw and H.legacy(d) and not H.roles(d):
@@ -492,7 +492,7 @@ if repo and os.path.isdir(repo) and git(repo, "rev-parse", "--git-dir"):
         br = kv.get("branch", "").replace("refs/heads/", "")
         mine = bool(br) and br in named
         if not mine and not dirty and not ahead: continue   # clean and unrelated: noise
-        rows.append((not mine, f"- {'*' if mine else ''}{os.path.relpath(wt, root)}: {kv.get('branch', 'detached').replace('refs/heads/', '')} "
+        rows.append((not mine, f"- {'*' if mine else ''}{os.path.relpath(wt, root).replace(os.sep, '/')}: {kv.get('branch', 'detached').replace('refs/heads/', '')} "
                      f"@ {kv.get('HEAD', '')[:8]}" + (f", {dirty} uncommitted" if dirty else "")
                      + (f", {ahead} unpushed" if ahead else "") + (", no upstream" if ahead is None else "")))
     rows.sort(key=lambda r: r[0])

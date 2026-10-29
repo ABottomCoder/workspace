@@ -96,7 +96,7 @@ def cmd_handoff(root, rel, role, tpl_path):
             os.makedirs(hist, exist_ok=True)
             dst = os.path.join(hist, f"handoff-{role}-{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.md")
             shutil.copyfile(rf, dst)
-            print(f"archived a copy: {os.path.relpath(dst, root)}")
+            print(f"archived a copy: {os.path.relpath(dst, root).replace(os.sep, '/')}")
         print(f"your handoff: {rel}/handoff/{role}.md (edit in place; only this role's file)")
     write_index(root, rel)
 
