@@ -44,6 +44,14 @@ test_route_check_native_windows_paths() {
   assert_contains "$(route "$(cygpath -w "$REPO/CLAUDE.md")")" "Routing self-check"
 }
 
+test_route_check_edit_with_chinese_text() {
+  # hook input is UTF-8; read with GBK, "。" before the escaped quote broke the JSON and the check was skipped
+  out=$(PYTHONIOENCODING=utf-8 python3 -c 'import json,sys; print(json.dumps({"tool_input": {"file_path": sys.argv[1], "new_string": "状态。\"x"}}, ensure_ascii=False))' \
+          "$(native_path "$REPO/CLAUDE.md")" \
+        | env -u PYTHONIOENCODING -u PYTHONUTF8 CLAUDE_PROJECT_DIR="$(native_path "$REPO")" bash "$REPO/tools/guard/route-check.sh")
+  assert_contains "$out" "Routing self-check"
+}
+
 test_route_check_flags_leak_in_framework_file() {
   f="$REPO/docs/_wstest_probe.md"; printf 'token ghp_%s\n' "$(printf 'b%.0s' $(seq 36))" > "$f"
   out=$(route "$(native_path "$f")"); rm -f "$f"

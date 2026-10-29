@@ -84,6 +84,21 @@ test_readonly_guard_confine() {
   assert_eq "$(probe Glob '{"pattern":"../../**/*.md"}')" 2 "glob pattern escaping with .."
   assert_eq "$(probe Glob '{"pattern":"*.md","path":".."}')" 2 "glob path escaping"
   assert_eq "$(probe WebSearch '{"query":"x"}')" 2 "web is offline"
+  # input is UTF-8 whatever the locale: read as GBK, the last byte of a CJK character pairs with the escaping
+  # backslash after it ("。\"", "中\\"), the JSON broke and a read was blocked
+  out=$(R="$REPO" WT="$wt" python3 - <<'PY'
+import json, os, subprocess, sys
+env = {k: v for k, v in os.environ.items() if k not in ("PYTHONIOENCODING", "PYTHONUTF8")}
+codes = set()
+for pat in ('状态。"x', '中\\x'):
+    inp = {"pattern": pat, "path": "sub"}
+    ev = json.dumps({"tool_name": "Grep", "cwd": os.environ["WT"], "tool_input": inp}, ensure_ascii=False).encode("utf-8")
+    codes.add(subprocess.run([sys.executable, os.path.join(os.environ["R"], "tools", "eval", "readonly_guard.py"), "--confine"],
+                             input=ev, capture_output=True, env=env).returncode)
+print(sorted(codes))
+PY
+)
+  assert_eq "$out" "[0]" "non-GBK text in the input"
   if [ "$(uname -o 2>/dev/null)" = Msys ]; then
     assert_eq "$(probe Read '{"file_path":"/c/Windows/win.ini"}')" 2 "git-bash drive path"
     assert_eq "$(probe Read '{"file_path":"C:\\\\Windows\\\\win.ini"}')" 2 "absolute path elsewhere"

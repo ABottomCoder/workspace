@@ -16,8 +16,8 @@ def block(msg):
     sys.exit(2)
 
 
-try:
-    ev = json.load(sys.stdin)
+try:  # the hook input is UTF-8; sys.stdin would decode it with the locale codec (GBK on a Chinese Windows)
+    ev = json.loads(sys.stdin.buffer.read().decode("utf-8"))
 except ValueError:
     ev = {}
 name = ev.get("tool_name", "")

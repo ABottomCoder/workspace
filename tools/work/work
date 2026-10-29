@@ -369,8 +369,8 @@ PY
 cmd_restore() {
   local input s src target
   input=$(cat)
-  s=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("session_id",""))' 2>/dev/null)
-  src=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("source",""))' 2>/dev/null)
+  s=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.loads(sys.stdin.buffer.read().decode("utf-8")).get("session_id",""))' 2>/dev/null)
+  src=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.loads(sys.stdin.buffer.read().decode("utf-8")).get("source",""))' 2>/dev/null)
   target=""; [ -n "$s" ] && [ -f "$BIND/$s" ] && target=$(sed -n 's/^target=//p' "$BIND/$s" | head -1)
   if [ -z "$target" ] || ! ( resolve "$target" ) >/dev/null 2>&1; then
     python3 -c 'import json; print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext":
@@ -454,8 +454,8 @@ PY
 cmd_snapshot() {
   local input s trig target repo=""
   input=$(cat)
-  s=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("session_id",""))' 2>/dev/null)
-  trig=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("trigger",""))' 2>/dev/null)
+  s=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.loads(sys.stdin.buffer.read().decode("utf-8")).get("session_id",""))' 2>/dev/null)
+  trig=$(printf '%s' "$input" | python3 -c 'import json,sys; print(json.loads(sys.stdin.buffer.read().decode("utf-8")).get("trigger",""))' 2>/dev/null)
   [ -n "$s" ] && [ -f "$BIND/$s" ] || exit 0
   target=$(sed -n 's/^target=//p' "$BIND/$s" | head -1)
   ( resolve "$target" ) >/dev/null 2>&1 || exit 0

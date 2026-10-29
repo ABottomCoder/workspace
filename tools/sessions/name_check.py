@@ -68,7 +68,7 @@ def main():
     fix, hook = "--fix" in sys.argv, "--hook" in sys.argv
     sid = ""
     if hook:
-        try: sid = json.load(sys.stdin).get("session_id", "")
+        try: sid = json.loads(sys.stdin.buffer.read().decode("utf-8")).get("session_id", "")  # not the locale codec
         except ValueError: pass
     sid = sid or os.environ.get("CLAUDE_CODE_SESSION_ID") or os.environ.get("CLAUDE_SESSION_ID") or ""
     tp = os.path.join(TDIR, sid + ".jsonl")

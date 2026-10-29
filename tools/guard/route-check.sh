@@ -5,8 +5,10 @@
 #     user/denylist.txt term, an absolute home path or a secret-like token.
 here="$(cd "$(dirname "$0")" && pwd)"; . "$here/patterns.sh"
 ROOT="${CLAUDE_PROJECT_DIR:-$(cd "$here/../.." && pwd)}"
+# stdin is UTF-8; the locale codec (GBK on a Chinese Windows) broke the JSON of an edit with Chinese text in it
 f=$(python3 -c 'import json,sys
-try: print(json.load(sys.stdin).get("tool_input",{}).get("file_path",""))
+sys.stdout.reconfigure(encoding="utf-8")
+try: print(json.loads(sys.stdin.buffer.read().decode("utf-8")).get("tool_input",{}).get("file_path",""))
 except Exception: pass' 2>/dev/null)
 [ -n "$f" ] || exit 0
 # Windows: Claude Code passes D:\x paths; compare everything in one (POSIX) form or nothing ever matches.

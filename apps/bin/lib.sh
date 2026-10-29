@@ -5,6 +5,10 @@ APPS_ROOT="$(cd "$APPS_BIN/.." && pwd)"
 MAIN="${WORKSPACE_MAIN:-$(cd "$APPS_ROOT/.." && pwd)}"   # main dir = parent of apps/
 BUSINESS="$MAIN/business"
 
+# Chat text is UTF-8; on a Chinese Windows Python's default codec is GBK, which garbles or chokes on it
+# (a CJK character before an escaping backslash breaks the JSON line; "⚠️" cannot be printed).
+export PYTHONUTF8=1
+
 die() { echo "app: $*" >&2; exit 1; }
 now() { date -u +%Y-%m-%dT%H:%MZ; }
 

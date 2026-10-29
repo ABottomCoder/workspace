@@ -9,7 +9,7 @@ LIMIT_MB=${CLAUDE_ROLLOVER_MB:-50}
 input=$(cat)
 eval "$(printf '%s' "$input" | python3 -c '
 import json, shlex, sys
-try: d = json.load(sys.stdin)
+try: d = json.loads(sys.stdin.buffer.read().decode("utf-8"))  # not the locale codec: GBK breaks on Chinese text
 except Exception: d = {}
 print("sid=%s tp=%s" % (shlex.quote(d.get("session_id", "")), shlex.quote(d.get("transcript_path", ""))))')"
 { [ -n "$sid" ] && [ -f "$tp" ]; } || exit 0

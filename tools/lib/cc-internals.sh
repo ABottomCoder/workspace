@@ -25,7 +25,8 @@ cc_session_title() {
   [ -f "$1" ] || return 0
   grep '"custom-title"' "$1" | tail -1 | python3 -c '
 import json, sys
-line = sys.stdin.read().strip()
+sys.stdout.reconfigure(encoding="utf-8")
+line = sys.stdin.buffer.read().decode("utf-8", "replace").strip()  # UTF-8, not the locale codec (GBK on a Chinese Windows)
 try: print(json.loads(line).get("customTitle", "") if line else "")
 except Exception: print("")'
 }
