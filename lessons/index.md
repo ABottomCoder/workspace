@@ -15,7 +15,7 @@ it everywhere wastes context on unrelated work. Domain lessons stay in their cat
 Entry format: `### <short title>` / **Mistake:** / **Root cause:** / **Rule:** / **Seen:** <times merged>.
 Entries are ordered by Seen.
 
-- [verification](verification.md) (42) — proving a change, fix or claim is true: checks that can fail, real entry points, reading evidence
+- [verification](verification.md) (43) — proving a change, fix or claim is true: checks that can fail, real entry points, reading evidence
 - [evidence-and-asking](evidence-and-asking.md) (17) — self-service before asking, hypothesis vs observation, relayed claims, read-only probes
 - [engineering](engineering.md) (25) — generic code and framework gotchas (frontend, backend, database, infra code)
 - [tooling-and-environment](tooling-and-environment.md) (33) — shell, processes, schedulers, CLIs, browsers, platform quirks
@@ -28,4 +28,4 @@ Entries are ordered by Seen.
 - [context-and-memory](context-and-memory.md) (7) — subagents, knowledge routing, docs vs memory, self-review
 - [secrets-and-safety](secrets-and-safety.md) (6) — credentials handling, publication channels, redaction, privilege
 
-Total: 209 entries.
+Total: 210 entries.
