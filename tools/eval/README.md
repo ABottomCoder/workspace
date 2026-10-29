@@ -51,7 +51,7 @@ verdict code), per-group pass rate and score, every case's passes, cost, tag, re
 - A new version runs only itself: `scoreboard.py compare` pairs it with the latest **baseline** entry of the
   same fingerprint (bootstrap over cases on the stored per-case rates) and prints the gate verdict. Old versions
   are never re-run, nothing is back-filled when cases change (that is a new golden version).
-- Fingerprint = golden version + world + tier + model + CLI version + judge. No match (the CLI auto-updates, e.g.
+- Fingerprint = golden version + world + tier and its case list + model + CLI version + judge. No match (the CLI auto-updates, e.g.
   2.1.220 → 2.1.312 during the build of this kit) → re-run the current baseline once under the new fingerprint
   and `add --baseline` it, then compare.
 - A shipped change is added with `--baseline`; a rejected candidate is added without it, for the record.
@@ -113,11 +113,19 @@ verdict code), per-group pass rate and score, every case's passes, cost, tag, re
 
 - **holdout**: B − A ≥ +12 points (twice that half-width) and the 95 % interval's lower bound > 0;
 - **guards**: the interval's lower bound ≥ −10 points, and no guard case falls from ≥ 8/10 to ≤ 5/10;
+- **process**: the mean score (0.4 process + 0.6 outcome) over dev + holdout cases, B − A, has a 95 % lower bound
+  ≥ −0.05. Pass rates miss a change that keeps answers right but drops the checking behind them: the negative
+  control (evidence rules removed) kept its pass rates and fell −0.10 [−0.19, −0.02] here; A/A +0.02 [−0.01, +0.06];
 - any case that drops from always passing to failing is read by hand before shipping.
 
 `scoreboard.py` holds these numbers (`GATE`, `FLOOR`). The positive control (`POS-v1`, k = 5) passed the holdout
-line by far (+50 % [+20, +79]) but its guard interval reached −12 with only 5 guards at k = 5: the guard line is
-tight for so few guards (see the v1 report). Earlier gate (live world, AA-1582d80): holdout ≥ +10, guards ≥ −12.
+line by far (+50 % [+20, +79]) and the process line (+0.36 [+0.15, +0.56]); its guard interval reached −12 with 5
+guards at k = 5, so C07 and C12 joined the core guards (8 now; user decision 2026-10-29, the line itself
+unchanged). Re-run on all 8 core guards at k = 10: guards +2 % [−11, +16], still 1 point under the line (C05 10→7,
+C07 10→8; no guard case fell to ≤ 5/10). Read: an oracle stuffed into `CLAUDE.md` is not a side-effect-free
+change, so a guard flag on it is plausible, not proof the line is too tight. The
+fingerprint covers the tier's case list, so the core baseline was re-added from the same AA-v1 runs. Earlier gate
+(live world, AA-1582d80): holdout ≥ +10, guards ≥ −12.
 
 Re-run the A/A when the golden version, the model, the CLI or the judge changes: the floor belongs to that
 combination (the scoreboard fingerprint).

@@ -97,19 +97,19 @@ test_scoreboard_baseline_compare_and_fingerprint() {
 import json, os, subprocess, sys
 R, H = os.environ["R"], os.environ["H"]
 g = os.path.join(H, "golden"); os.makedirs(os.path.join(H, "data"))
-cases = {f"H{i}": "holdout" for i in range(6)} | {f"G{i}": "guard" for i in range(3)}
+cases = {f"H{i}": "holdout" for i in range(6)} | {f"D{i}": "dev" for i in range(4)} | {f"G{i}": "guard" for i in range(3)}
 for cid, sp in cases.items():
     os.makedirs(os.path.join(g, cid)); json.dump({"id": cid, "kind": "target", "split": sp, "cls": "x"}, open(os.path.join(g, cid, "case.json"), "w"))
 json.dump({"version": "t1", "world_sha256": "ab" * 32, "cases": {c: {} for c in cases}}, open(os.path.join(g, "manifest.json"), "w"))
 json.dump({"core": list(cases), "extended": []}, open(os.path.join(g, "tiers.json"), "w"))
 J = {"model": "sonnet", "votes": 3, "sha256": "f" * 16}
-def runs(tag, rev, passes, cli="2.1.312"):
+def runs(tag, rev, passes, cli="2.1.312", score=lambda c: 1.0):
     d = os.path.join(H, "runs", tag); os.makedirs(d)
     for cid in cases:
         for i in range(1, 5):
             ok = i <= passes(cid)
             json.dump({"case": cid, "run": i, "rev": rev, "model": "m", "cli": cli, "golden": "t1", "cost_usd": 0.1}, open(os.path.join(d, f"{cid}.{i}.json"), "w"))
-            json.dump({"verdict": "PASS" if ok else "FAIL", "score": 1.0 if ok else 0.0, "judge": J}, open(os.path.join(d, f"{cid}.{i}.verdict.json"), "w"))
+            json.dump({"verdict": "PASS" if ok else "FAIL", "score": score(cid) if ok else 0.0, "judge": J}, open(os.path.join(d, f"{cid}.{i}.verdict.json"), "w"))
     return d
 sb = lambda *a: subprocess.run([sys.executable, os.path.join(R, "tools", "eval", "scoreboard.py"), *a, "--cases", g, "--tier", "core"],
                                capture_output=True, text=True, encoding="utf-8", env=dict(os.environ, WS_EVAL_HOME=H))
@@ -123,10 +123,14 @@ c = runs("C", "ccc", lambda c: 4 if c.startswith("H") else (0 if c == "G0" else 
 print("fell from" in sb("compare", "--runs", c).stdout)            # a guard collapses
 e = runs("E", "bbb", lambda c: 4, cli="9.9.9")
 print(sb("compare", "--runs", e).returncode)                       # other CLI: no comparable baseline -> 2
+f = runs("F", "fff", lambda c: 2 if c.startswith("H") else 4, score=lambda c: 0.6 if c[0] in "HD" else 1.0)
+print("process:" in sb("compare", "--runs", f).stdout)             # same pass rates, process scores fall
+json.dump({"core": [c for c in cases if c != "G2"], "extended": ["G2"]}, open(os.path.join(g, "tiers.json"), "w"))
+print(sb("compare", "--runs", b).returncode)                       # core membership changed: no comparable baseline -> 2
 print(os.path.exists(os.path.join(H, "data", "scoreboard.md")))
 PY
 )
-  assert_eq "$(echo $out | tr -d '\r')" "2 0 1 True True 2 True" "scoreboard: baseline, duplicate, gate pass, guard fall, fingerprint mismatch"
+  assert_eq "$(echo $out | tr -d '\r')" "2 0 1 True True 2 True 2 True" "scoreboard: baseline, duplicate, gate pass, guard fall, fingerprint mismatch, process fall, tier change"
 }
 
 test_stage_world_applies_overlay_as_of_cut() {

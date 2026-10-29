@@ -11,7 +11,7 @@ change (a changed case set is a new golden version, so a new fingerprint).
 
 An entry holds the fingerprint, the per-group pass rates and scores, and every case's passes, runs and mean score,
 so a comparison is a paired bootstrap over cases against the stored numbers. Two run sets are comparable only when
-their fingerprints match: golden version (and world hash), tier, model, `claude --version`, judge (model, votes,
+their fingerprints match: golden version (and world hash), tier and its case list, model, `claude --version`, judge (model, votes,
 verdict code hash). If none matches (the CLI auto-updated, the model or the judge changed), compare says so: the
 current best is re-run once under the new fingerprint to set a new baseline.
 
@@ -20,7 +20,7 @@ A/A noise floor, the baseline is stale: re-baseline.
 
 Files: <eval home>/data/scoreboard.jsonl (append-only) and scoreboard.md (rendered).
 """
-import glob, json, os, random, sys
+import glob, hashlib, json, os, random, sys
 from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -28,8 +28,11 @@ MAIN = os.path.dirname(os.path.dirname(HERE))
 EVAL_HOME = os.environ.get("WS_EVAL_HOME") or os.path.join(os.path.dirname(MAIN), os.path.basename(MAIN) + "-eval")
 BOARD = os.path.join(EVAL_HOME, "data", "scoreboard.jsonl")
 # Gate (README "Gate"), from the A/A on golden v1 core (AA-v1, 5 vs 5 runs: holdout +3 % [-6, +11], guard +10 %
-# [-7, +33]), for k = 10 per arm: B - A on the mean per-case pass rate, paired over cases.
-GATE = {"holdout_min_gain": 0.12, "guard_min_lo": -0.10, "guard_case_from": 0.8, "guard_case_to": 0.5}
+# [-7, +33]), for k = 10 per arm: B - A on the mean per-case pass rate, paired over cases. score_min_lo: the process
+# check on dev + holdout mean scores (A/A floor about ±0.04; NEG-v1, the evidence rules removed, fell -0.14 on dev
+# with flat pass rates). Decided by the user on 2026-10-29 together with C07 and C12 joining the core guards.
+GATE = {"holdout_min_gain": 0.12, "guard_min_lo": -0.10, "guard_case_from": 0.8, "guard_case_to": 0.5,
+        "score_min_lo": -0.05}
 FLOOR = 0.10  # drift: an anchor run (core, k = 5) moving holdout by more than this means re-baseline
 
 
@@ -103,7 +106,9 @@ def entry(args):
 
 
 def fingerprint(e):
-    return (e["golden"], e["world"], e["tier"], e["model"], e["cli"], json.dumps(e["judge"], sort_keys=True))
+    # the case list too: a tier whose membership changed (tiers.json is outside the golden hashes) is another set
+    ids = hashlib.sha256(",".join(sorted(e["cases"])).encode()).hexdigest()[:12]
+    return (e["golden"], e["world"], e["tier"], ids, e["model"], e["cli"], json.dumps(e["judge"], sort_keys=True))
 
 
 def board():
@@ -121,7 +126,7 @@ def render():
         pct = lambda k: f"{g[k]['pass']:.0%}" if k in g else "—"
         sc = f"{g['holdout']['score']:.2f}" if g.get("holdout", {}).get("score") is not None else "—"
         j = e["judge"]
-        out.append(f"| {e['date'][:16]} | {e['rev'][:12]} | {'★' if e.get('baseline') else ''} | {e['golden']} ({e['world']}) | {e['tier']} | {e['k']} | {e['model']} | "
+        out.append(f"| {e['date'][:16]} | {e['rev'][:12]} | {'★' if e.get('baseline') else ''} | {e['golden']} ({e['world']}) | {e['tier']} ({len(e['cases'])}) | {e['k']} | {e['model']} | "
                    f"{e['cli'].split()[0]} | {j['model']}×{j['votes']} {j['sha256'][:8]} | {pct('holdout')} | {pct('dev')} | "
                    f"{pct('guard')} | {sc} | {e['cost_per_run']:.2f} | {e['tag']} | {e.get('report') or ''} |")
     open(os.path.join(os.path.dirname(BOARD), "scoreboard.md"), "w", encoding="utf-8").write("\n".join(out) + "\n")
@@ -138,6 +143,7 @@ def compare(new, base, boot=10000):
         return b[int(0.025 * boot)], b[int(0.975 * boot) - 1]
 
     rate = lambda e, i: e["cases"][i][0] / e["cases"][i][1]
+    score = lambda e, i: e["cases"][i][2]
     lines.append(f"| Group | Cases | Base | New | New-Base | 95% CI |\n|---|---|---|---|---|---|")
     res = {}
     for name in new["groups"]:
@@ -150,6 +156,14 @@ def compare(new, base, boot=10000):
         mb, mn = sum(rate(base, i) for i in ids) / len(ids), sum(rate(new, i) for i in ids) / len(ids)
         res[name] = (mn - mb, lo, hi)
         lines.append(f"| {name} | {len(ids)} | {mb:.0%} | {mn:.0%} | {mn - mb:+.0%} | [{lo:+.0%}, {hi:+.0%}] |")
+    sids = [i for i in ids_all if (i in group_ids(new, "holdout") or i in group_ids(new, "dev"))
+            and score(new, i) is not None and score(base, i) is not None]
+    s = None
+    if sids:  # process: mean score (0.4 process + 0.6 outcome), which moves when pass rates do not
+        d = [score(new, i) - score(base, i) for i in sids]
+        s = (sum(d) / len(d), *ci(d))
+        lines.append(f"\n| Score (dev + holdout) | {len(sids)} | {sum(score(base, i) for i in sids) / len(sids):.2f} | "
+                     f"{sum(score(new, i) for i in sids) / len(sids):.2f} | {s[0]:+.2f} | [{s[1]:+.2f}, {s[2]:+.2f}] |")
     same_rev = new["rev"] == base["rev"]
     if same_rev:  # drift check: the same version again
         d, lo, hi = res.get("holdout", (0, 0, 0))
@@ -159,9 +173,11 @@ def compare(new, base, boot=10000):
     h, g = res.get("holdout"), res.get("guard")
     why = []
     if not h or h[0] < GATE["holdout_min_gain"] or h[1] <= 0:
-        why.append("holdout gain below +10 points or its interval reaches 0")
+        why.append(f"holdout gain below {GATE['holdout_min_gain']:+.0%} or its interval reaches 0")
     if g and g[1] < GATE["guard_min_lo"]:
         why.append(f"guard interval lower bound {g[1]:+.0%} < {GATE['guard_min_lo']:+.0%}")
+    if s and s[1] < GATE["score_min_lo"]:
+        why.append(f"process: dev + holdout score interval lower bound {s[1]:+.2f} < {GATE['score_min_lo']:+.2f}")
     for i in ids_all:
         if base["cases"][i] and rate(base, i) >= GATE["guard_case_from"] and rate(new, i) <= GATE["guard_case_to"] and \
                 i in group_ids(new, "guard"):
