@@ -17,7 +17,8 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 - Keep a guard's pattern out of your own compound commands (separate call or `[t]sx`).
 - Afterwards verify with `ps`/`pgrep -x` that your tree is gone and every other service is still up; check for leftovers before telling the user a tool works. Warn owners of template clones about inherited ops scripts.
 - Ad-hoc restarts during development count too: a one-off `pkill -f "src/main.ts"` to restart a dev server took down two other projects' public previews. Start dev servers with a pidfile from the first run.
-**Seen:** 7
+- macOS/BSD `pkill`/`pgrep` take several patterns and stop parsing options at the first one: `pkill -f "a" -U 501 -f "b"` kills everything matching `a`, `-U`, `501`, `-f` or `b`. One such call killed eight Claude sessions, a bot write end and browser helpers. Always `pgrep -lf <pattern>` first, read the list, then `kill <pids>`; one pattern, options before it.
+**Seen:** 8
 
 ### Assume the working directory has drifted; use absolute paths and isolated calls
 **Mistake:** A messaging script failed ("Cannot find module", auth error) after earlier `cd`s for grepping, and when chained after `cd other-repo` its dotenv loaded the wrong `.env`. A `cd service-a && rsync dist/ ... && rsync dist/ ...` chain shipped one service's build into another's target, three times.
@@ -47,7 +48,8 @@ Traps in shells, process management, schedulers, deploy tooling, agent harnesses
 **Mistake:** A cron "safety net" ran bare `node` and failed every run with output sent to `/dev/null`, piling up orphans during an outage; cron and then launchd jobs failed "Operation not permitted" because the scripts lived under `~/Documents`.
 **Root cause:** cron/launchd use a minimal environment without rc-file PATH additions, and on macOS `~/Documents`, `~/Desktop` and `~/Downloads` are privacy-protected folders whose GUI grants background jobs do not inherit.
 **Rule:** Resolve interpreters inside the script (`command -v node ||` set PATH) or set `PATH=` in the crontab. Keep anything run outside the interactive session outside protected folders, or grant the interpreter Full Disk Access. Test in a scheduler-like env first (`env -i PATH=/usr/bin:/bin HOME=$HOME ...` or a trivial agent in the target dir), log the output, and check symlinks survive relocation.
-**Seen:** 2
+- The same holds for terminal windows opened by script (`osascript ... iTerm ... command "..."`): the command runs without rc-file PATH, so a bare `claude`/`node` fails and the window closes at once, looking like "nothing started". Use absolute paths (`$HOME/.local/bin/claude`), keep the window open on failure (`; read`), open one window first and confirm the process with `pgrep` before opening the rest. Done twice in one session.
+**Seen:** 3
 
 ### zsh does not word-split unquoted variables
 **Mistake:** Monitors built as `R="ssh ..."; $R cmd` or `for s in $LIST` ran the whole string as one command or one loop item; one died silently, another raised a plausible false alarm about production.

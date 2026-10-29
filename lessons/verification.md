@@ -247,3 +247,9 @@ How to prove a change, fix, measurement or claim is actually true before reporti
 **Root cause:** Listed checks by effort rather than by reachability.
 **Rule:** Before writing a "not checked" item, ask whether a local run, a throwaway DB or a read-only prod count could settle it. If yes, run it first. Only truly unreachable items (no access, needs a third party, needs prod writes) stay on the list.
 **Seen:** 1
+
+### "No glitches" in motion needs dense sampling of the delivered take
+**Mistake:** A procedural animation change was declared free of a visual defect ("no finger bends backwards") after six staged close-ups; the recipient saw the defect in the delivered recording within seconds, at moments the stills had not covered.
+**Root cause:** An absence claim about time-varying output was made from a few hand-picked frames of a different run, not from the artifact that was sent.
+**Rule:** For animation or video, check the exact file being delivered, sampled densely across its whole length (a frame every few seconds at minimum, plus the most extreme-motion segments), at the framing the viewer sees. Make the failure state impossible by construction where you can (clamp the range) instead of relying on samples. Without that, say "checked N frames" rather than "none". For a direction question (does it bend the right way?), stills from one angle are ambiguous: measure it against a physical expectation (e.g. a hanging hand's fingertips must move toward the body when it closes) before trusting what a picture seems to show.
+**Seen:** 2 (second time a reversed sign survived several visual checks)
