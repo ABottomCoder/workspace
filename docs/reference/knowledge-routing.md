@@ -16,6 +16,7 @@ read this, in what situation?
 | Non-ticket deliverables, research, recaps | `business/<co>/docs/<topic>/` |
 | Cross-business work items | `user/work/<slug>/` |
 | Daily log | `user/logs/YYYYMMDD.log`, lines prefixed with the business |
+| Daily journal (what happened each day, written from transcripts) | `user/logs/journal/YYYY-MM.md` (`tools/sessions/journal_catchup.py`) |
 | Auto-memory (`user/memory/`) | pointers and what fits nowhere else; never business facts |
 
 A lesson that still holds with the business details removed is promoted to `lessons/` with a pointer left

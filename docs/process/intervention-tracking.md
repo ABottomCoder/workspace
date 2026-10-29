@@ -41,16 +41,24 @@ the framework repo). One row per ticket:
 3. **Append the row at ticket close.**
 4. **Periodic analysis** (on request, about every 1 to 2 weeks): group by category, report the
    distribution and the autonomy rate (tickets with zero markers / all tickets), and propose one targeted
-   rule change (a lesson or a principle edit) for the dominant category.
+   rule change (a lesson or a principle edit) for the dominant category. It ships only after it beats the
+   base on the regression set (`tools/eval/README.md`): the online stats alone cannot prove a change.
 
 ## Scan-based mode (supersedes manual rows when active)
 
-`/scan-sessions` runs `tools/sessions/scan_sessions.py` over `user/sessions/`, writes compact digests
-(`user/intervention/digests/`, may contain conversation content: never committed), then judges them with
-a high bar: an error counts only with a real `// fix:` marker, an explicit user correction ("that's
-wrong", "redo this"), or an explicit admission by the agent. Clarifying questions and preference tweaks
-are not errors. Results go to `user/intervention/stats.md` (autonomy, category distribution, dominant
-pattern → action) and `tracking.md` (one narrative line per confirmed error).
+Each finished day with conversation is judged once, together with its journal entry: the SessionStart
+hook `tools/sessions/journal-hook.sh` starts `journal_catchup.py` in the background at most once a day
+(`/scan-sessions` runs it by hand). `scan_sessions.py` cuts the transcripts into per-day extracts
+(`user/intervention/days/`, conversation content: never committed); a headless worker
+(`tools/sessions/journal-day.md`) judges each day with a high bar: an error counts only with a real
+`// fix:` marker, an explicit user correction ("that's wrong", "redo this"), or an explicit admission by
+the agent. Clarifying questions and preference tweaks are not errors. Each error also names the existing
+lesson it violates, if any.
+
+`intervention_stats.py` rebuilds `user/intervention/stats.md` from the judged days: two-week periods side
+by side (errors per 100 user messages as the main rate, clean days, category and signal mix), and lesson
+efficacy (errors before and after the lesson's first commit; errors after mean the lesson is not
+working). `tracking.md` holds one line per confirmed error. The periodic analysis above reads these.
 
 ## Optional hardening
 

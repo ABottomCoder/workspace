@@ -1,33 +1,29 @@
 ---
 name: scan-sessions
-description: Incrementally scan local Claude Code transcripts (user/sessions/) and update the agent's confirmed-error stats and tracking. Use when the user says "scan sessions", "tally session errors", "how often was I corrected", or runs /scan-sessions.
+description: Catch up the daily journal and the agent's confirmed-error stats from local Claude Code transcripts (user/sessions/), then report the two-week trend. Use when the user says "scan sessions", "tally session errors", "how often was I corrected", "catch up the journal", "补日志", or runs /scan-sessions.
 ---
 
 # scan-sessions
 
-Lazy-mode intervention tracking (`docs/process/intervention-tracking.md`): no manual logging; judge
-the errors the agent made from transcripts, with a high evidence bar.
+Lazy-mode intervention tracking (`docs/process/intervention-tracking.md`) plus the daily journal, in
+one pass per finished day. It normally runs by itself: the SessionStart hook
+`tools/sessions/journal-hook.sh` starts the catch-up in the background at most once a day. This skill
+is the manual run and the read-out.
 
-1. **Extract (deterministic):** `python3 tools/sessions/scan_sessions.py` (`--list` to preview,
-   `--all` to rescan). It reads `user/sessions/` (fallback: the main dir's `~/.claude/projects`
-   dir), skips already-scanned lines (`user/intervention/.scan_state.json`) and writes one digest per
-   new/changed session to `user/intervention/digests/<sessionId>.md`.
-2. **Nothing new** → say so and stop.
-3. **Judge the new digests.** More than ~3 → parallel subagents, ~10 digests each, all with this
-   standard:
-   - Count an error only with strong evidence: (a) a `// fix:[<category>]` marker, (b) the user
-     explicitly says something was wrong ("that's wrong", "redo this"), or (c) the agent explicitly
-     admits one ("I misread", "that was wrong").
-   - Clarifying questions, mid-course refinements and preference tweaks are not errors. If unsure, it
-     is not an error. Never speculate.
-   - One category per error: `requirements`, `approach`, `implementation`, `testing`, `tooling`.
-   - Return JSON: `{session, title, date, is_ticket_work, errors: [{category, signal, root_cause, corrected}]}`.
-4. **Merge** (append/update, never rewrite history):
-   - `user/intervention/stats.md`, created from `stats-template.md` next to this file if missing:
-     recompute the three dashboards, update "Last scan" and the session count.
-   - `user/intervention/tracking.md`: one short narrative line per confirmed error, newest first;
-     list clean sessions.
-5. **Report:** new sessions, new errors, the dominant category this round, and any repeated root
-   cause worth a lesson (`lessons/`) or principle edit.
+1. **Catch up:** `python3 tools/sessions/journal_catchup.py` (run_in_background for more than a few
+   days; `--dry-run` lists the pending days, `--max N` limits the run, `--day YYYY-MM-DD` re-judges a
+   day). It rebuilds the per-day extracts (`scan_sessions.py` → `user/intervention/days/`), runs the
+   worker (`journal-day.md`, `claude -p`, no tools) on each pending day, writes the journal entry into
+   `user/logs/journal/YYYY-MM.md` and the errors into `user/intervention/errors/<day>.json`, and
+   rebuilds `stats.md` and `tracking.md` (`intervention_stats.py`). Cost per day:
+   `user/intervention/.worker_runs.jsonl`.
+2. **A failure** stops after 3 in a row: check `claude -p` works in a terminal (an expired login is the
+   usual cause), then rerun.
+3. **Report from `user/intervention/stats.md`:** the latest full two-week period against the ones
+   before it (errors per 100 user messages, top category), lessons with errors after they were added
+   (they are not working), and the category with most errors no lesson covers. Propose one concrete
+   lesson or principle change for the worst of these; changing rules goes through the user.
 
-Digests contain conversation content and live only under `user/` (never committed).
+Error standard (kept in `tools/sessions/journal-day.md`): a `// fix:` marker, an explicit user
+correction, or an explicit agent admission; if unsure, not an error. Extracts, journal and errors hold
+conversation content and live only under `user/` (never committed).
