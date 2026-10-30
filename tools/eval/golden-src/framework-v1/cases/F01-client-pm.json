@@ -1,0 +1,28 @@
+{
+ "id": "F01-client-pm",
+ "derived_from": "F01",
+ "kind": "fact",
+ "cls": "lookup",
+ "split": "dev",
+ "prompt": "Ferrowick 那边的客户 PM 是谁？",
+ "pass": "Names Dana Okafor, from the people file.",
+ "fail": "Wrong or unsourced name.",
+ "auto": {
+  "contains_any": [
+   "Dana"
+  ],
+  "calls_any": [
+   "Read",
+   "Grep",
+   "Glob"
+  ]
+ },
+ "auto_only": true,
+ "asserts": [
+  [
+   "contains",
+   "business/Ferrowick/people.md",
+   "Dana Okafor"
+  ]
+ ]
+}

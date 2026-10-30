@@ -1,0 +1,44 @@
+{
+ "id": "T25-heapq-key-field",
+ "derived_from": "T25",
+ "kind": "target",
+ "cls": "misread",
+ "split": "holdout",
+ "start": "2026-10-24T03:00:00Z",
+ "prompt": "python手册那里，堆的部分写得不全，比如建大顶堆，对于元素为二元组甚至三元组，根据不同值建堆等，你补一下吧",
+ "pass": "Covers building a heap keyed on a chosen field without restructuring the stored data, e.g. a min-heap by v[1] of 2-tuples or (key, value) pairs keyed by value, via a decorated entry like (v[1], i, v), a wrapper class with __lt__, or nsmallest/nlargest with key=; plus max-heap by negation. Content may be given in chat if it cannot edit the file.",
+ "fail": "Only covers max-heap by negation and lexicographic tuple comparison with the user reordering fields so the key comes first (e.g. (dist, node), (-freq, ch)), never showing how to heap by v[1] or by a dict value.",
+ "turns": [
+  {
+   "user": "刷题卡了一下：手册里列表那块没写 list1 + list2、list * 3 这种运算符写法，补一下"
+  },
+  {
+   "assistant": [
+    {
+     "tool": "Grep",
+     "input": {
+      "pattern": "a \\+ b|\\* 3",
+      "path": "{{WTF}}/business/Lab/PyNotes/handbook.md",
+      "output_mode": "content"
+     },
+     "result": "No matches found",
+     "error": false
+    },
+    "确实没有，补在 list 那节：",
+    {
+     "tool": "Edit",
+     "input": {
+      "file_path": "{{WTF}}/business/Lab/PyNotes/handbook.md",
+      "old_string": "a[::-1]                     # 反转副本\n```",
+      "new_string": "a[::-1]                     # 反转副本\n# 运算符：\na + b                       # 拼接成新列表\na * 3                       # 重复 3 次\n[0] * n                     # 定长初始化\ngrid = [[0] * m for _ in range(n)]   # 二维初始化，别写 [[0] * m] * n\nfirst, *rest = a            # 解包\n```\n\n坑：`[[0] * m] * n` 的 n 行是同一个对象，改一行全变。",
+      "replace_all": false
+     },
+     "result": "The file {{WTF}}/business/Lab/PyNotes/handbook.md has been updated successfully.",
+     "error": false
+    },
+    "补上了：`a + b` 拼接、`a * 3` 重复、`[0] * n` 定长初始化、二维初始化的正确写法和解包，外加 `[[0] * m] * n` 共享同一行的坑。"
+   ]
+  }
+ ],
+ "note": "Scene moved to Lab/PyNotes/handbook.md (Markdown instead of the original HTML artifact); its heap section holds only heapify/push/pop, max-heap by negation and a plain (dist, node) tuple. The prior turn (adding list operators) mirrors the original's preceding handbook edit; its Grep result reflects the file before that edit."
+}

@@ -1,0 +1,14 @@
+{
+ "id": "T19-novel-crossrealm-fix",
+ "derived_from": "T19",
+ "kind": "target",
+ "cls": "misread",
+ "split": "dev",
+ "prompt": "等下，我发现这里有个漏洞。敌人要对付岑舟，根本不用打赢她：凑一批不要命的死士跟着她进沉壤，一起把招式往上顶，硬撑到超载，界一塌，她这个最强的人也就跟着没了。最强的被一群炮灰送走，太便宜了。能不能修一下？比如谁超载谁挨天衡的雷罚，自己扛后果，而不是整个界陪葬。",
+ "pass": "Proposes fixes for the expendable-fighters overload exploit that still hold when the enemy brings cultivators from a higher realm, who are suppressed to exactly the lower realm's cap (rule set in the first turn and `[定]` in the BIBLE: anyone from 浮屿/星阙 entering 沉壤 sits at 化形后期): e.g. no realm-wide collapse at all (excess power clipped, punishment lands on the caster), or an explicit cost/limit on cross-realm travel; it does not rely on near-cap fighters being scarce.",
+ "fail": "Relies on a fix like 'the threshold is per single caster and near-cap cultivators are extremely rare, so expendable fighters can't trigger it', ignoring that higher-realm cultivators entering a lower realm are plentiful at its cap.",
+ "note": "Independent fictional setting (岑舟/祁默, 沉壤/浮屿/星阙, 天衡). Two setting turns fix the realm cap and the per-technique cap; the BIBLE in the world is the state right before the prompt, with no fix for the exploit (it also holds the earlier T23-era lines).",
+ "prefix_sha256": "f1f9495a062200de4abf6d86e106133a83c4dc5fd74d225f34f50300b032dcce",
+ "prefix_lines": 10,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

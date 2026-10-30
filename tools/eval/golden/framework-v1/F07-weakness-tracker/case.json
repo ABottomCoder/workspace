@@ -1,0 +1,22 @@
+{
+ "id": "F07-weakness-tracker",
+ "derived_from": "F07",
+ "kind": "fact",
+ "cls": "lookup",
+ "split": "holdout",
+ "prompt": "JobHunt 项目里有没有一个叫 weakness-tracker 的文件？是什么格式的？",
+ "pass": "Yes: business/Lab/JobHunt/weakness-tracker.html (HTML).",
+ "fail": "Says it does not exist or names another format.",
+ "auto": {
+  "contains_any": [
+   "html"
+  ],
+  "calls_any": [
+   "Glob",
+   "Grep",
+   "Read"
+  ]
+ },
+ "auto_only": true,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

@@ -14,8 +14,8 @@ of the framework and compares judged outcomes on the same case set.
 | `scoreboard.py` | one entry per scored run set with its fingerprint; compares a new version with the recorded baseline |
 
 Data lives outside the workspace and outside git: `<workspace>-eval/` next to it (`WS_EVAL_HOME`):
-`worktrees/<sha8>` and `data/` (cases, runs, verdicts, reports). Cases hold conversation excerpts: they
-never go into a repo.
+`worktrees/<sha8>` and `data/` (cases, runs, verdicts, reports). Cases mined from real sessions hold
+conversation excerpts: they never go into a repo. Only the fictional framework sets (below) are committed.
 
 ## Golden mode (the default for prompt changes)
 
@@ -41,6 +41,17 @@ each case's input, conversation prefix, world and rubric are fixed; only the fra
 shows as discriminating (pass rate 10-90 %) plus one or two cheap always-pass guards per class; `extended` = the
 rest, mostly long resumed conversations that always pass. The gate is computed on core (`--tier core` for
 replay and report); extended runs before big changes only.
+
+**Portable framework sets** (`tools/eval/golden/<v>/`, committed): the private sets above come from one person's
+sessions and never leave their machine, so anyone else who clones the workspace has the kit but no cases. A
+framework set rebuilds each private case into a fictional world (user, businesses, projects, people all
+invented) with a few synthetic turns as its prefix, keeping the failure pattern and the rubric. Same layout, same
+tools: `replay.py --golden tools/eval/golden/framework-v1`. Source: `golden-src/<v>/` (one JSON per case +
+`world/`), built by `build_framework.py <v>`, deterministic (a test rebuilds every committed set byte for byte).
+A golden worktree has `tools/eval/golden*` removed before a case runs: the rubrics there are answer keys. Scores
+of a framework set compare only with its own baseline. Runs, verdicts and the scoreboard stay in `data/`.
+Measured on framework-v1: about 18 s and $0.04 per replay plus $0.04 per judged run (3 votes), so a core
+candidate run (26 cases × 10) takes about 26 minutes on 3 slots (`--slot`), 16 on 5.
 
 ## Scoreboard: score each version once
 

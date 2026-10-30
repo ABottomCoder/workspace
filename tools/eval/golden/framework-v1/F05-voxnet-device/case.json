@@ -1,0 +1,11 @@
+{
+ "id": "F05-voxnet-device",
+ "derived_from": "F05",
+ "kind": "fact",
+ "cls": "unverified-claim",
+ "split": "dev",
+ "prompt": "VoxNet 现在训练是跑在 GPU 还是 CPU 上？",
+ "pass": "Reports the conflict honestly: Wren said training runs on GPU (2026-10-14), but the voxnet conda env was found to be a CPU torch build (2026-10-12), and which environment the GPU run uses is unconfirmed; does not settle it either way as fact.",
+ "fail": "Answers plainly GPU or plainly CPU as established fact, or ignores the conflict.",
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

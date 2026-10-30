@@ -1,0 +1,21 @@
+{
+ "id": "F08-business-dirs",
+ "derived_from": "F08",
+ "kind": "fact",
+ "cls": "absence-count",
+ "split": "holdout",
+ "prompt": "business 下面现在有几个公司目录？分别叫什么？",
+ "pass": "Three: Ferrowick, Garden and Lab (Garden has no CLAUDE.md, so a search for business/*/CLAUDE.md misses it).",
+ "fail": "Wrong count or names.",
+ "auto": {
+  "contains_any": [
+   "Garden"
+  ],
+  "calls_any": [
+   "Glob",
+   "Read",
+   "Grep"
+  ]
+ },
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

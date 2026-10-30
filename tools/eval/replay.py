@@ -36,6 +36,7 @@ MAIN = os.path.dirname(os.path.dirname(HERE))
 # All eval data lives outside the workspace, in one dir next to it: worktrees/ and data/ (cases, runs, reports)
 EVAL_HOME = os.environ.get("WS_EVAL_HOME") or os.path.join(os.path.dirname(MAIN), os.path.basename(MAIN) + "-eval")
 MIRRORED = ("business", "user")
+EVAL_SETS = ("tools/eval/golden", "tools/eval/golden-src")  # committed portable sets: removed from a golden worktree
 MIRROR_SKIP = {".git", "node_modules", ".venv", "venv", "__pycache__", ".next", "dist", "build", ".cache",
                ".pytest_cache", "target", "sessions", "eval", ".secrets"}
 TOOLS = "Read,Grep,Glob,WebSearch,WebFetch"
@@ -200,6 +201,10 @@ def stage_world(wt, case_dir):
     world = os.path.join(case_dir, "world")
     if not os.path.isdir(world):
         world = os.path.join(os.path.dirname(case_dir), "world")
+    for d in EVAL_SETS:  # the committed framework sets hold every case's rubric: an answer key inside the worktree
+        p = os.path.join(wt, *d.split("/"))
+        if os.path.isdir(p):
+            shutil.rmtree(lp(p))
     for d in MIRRORED:
         p = os.path.join(wt, d)
         if os.path.lexists(p):
@@ -339,7 +344,10 @@ def main():
             cases.append(c)
     else:
         cases = json.load(open(flag(args, "--cases"), encoding="utf-8"))
-    only = set(filter(None, (flag(args, "--only") or "").split(",")))
+    only = set(filter(None, (s.strip() for s in (flag(args, "--only") or "").split(","))))
+    unknown = only - {c["id"] for c in cases}
+    if unknown:  # a silently dropped id is a case that never runs (seen: a CRLF slot file lost the last id per line)
+        raise SystemExit(f"--only: no such case(s): {sorted(unknown)}")
     cases = [c for c in cases if not only or c["id"] in only]
     if flag(args, "--tier"):  # golden: core (the gate's set) or extended, from <version>/tiers.json
         tier = set(json.load(open(os.path.join(golden, "tiers.json"), encoding="utf-8"))[flag(args, "--tier")])

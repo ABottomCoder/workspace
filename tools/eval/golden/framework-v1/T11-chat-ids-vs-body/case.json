@@ -1,0 +1,14 @@
+{
+ "id": "T11-chat-ids-vs-body",
+ "derived_from": "T11",
+ "kind": "target",
+ "cls": "misread",
+ "split": "dev",
+ "prompt": "那对于presence在线状态，大群里也不能实时广播了吧？大群需要显示群友状态么？我来做的话，群里不会主动显示，用户点开某个成员的资料卡，或者进入群友列表页再主动去拉取在线状态。还有个小问题是，在架构图里，我们传递的始终是消息id是吧，最终显示给用户时，再去消息数据库中用id取数据并展示",
+ "pass": "Answers the presence question and, on 'do we always pass message ids and fetch at display time', explains chat delivery with a reason that survives the big-group counterexample: e.g. copy cost = N x body size (small groups copy cheaply, big groups share one timeline), chat messages are immutable with no volatile counters to hydrate, media goes by reference; or just describes the delivery path without a sharing argument.",
+ "fail": "Justifies chat carrying the message body (vs feed storing ids) by 'a chat message belongs to one conversation / is not shared, so exclusive data is stored inline and shared data by reference', which a large group (one message read by thousands) contradicts.",
+ "note": "Scene moved to the ch-chat notes; the two preceding coach turns (two paths; large group = one shared timeline, like the news-feed celebrity case) are kept in shortened form because the large-group counterexample the rubric relies on comes from them.",
+ "prefix_sha256": "ae273c86ff62118e635b0bc8f35ad45f508864d3af4c23cdc3c8d20a528e071f",
+ "prefix_lines": 6,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

@@ -1,0 +1,14 @@
+{
+ "id": "T25-heapq-key-field",
+ "derived_from": "T25",
+ "kind": "target",
+ "cls": "misread",
+ "split": "holdout",
+ "prompt": "python手册那里，堆的部分写得不全，比如建大顶堆，对于元素为二元组甚至三元组，根据不同值建堆等，你补一下吧",
+ "pass": "Covers building a heap keyed on a chosen field without restructuring the stored data, e.g. a min-heap by v[1] of 2-tuples or (key, value) pairs keyed by value, via a decorated entry like (v[1], i, v), a wrapper class with __lt__, or nsmallest/nlargest with key=; plus max-heap by negation. Content may be given in chat if it cannot edit the file.",
+ "fail": "Only covers max-heap by negation and lexicographic tuple comparison with the user reordering fields so the key comes first (e.g. (dist, node), (-freq, ch)), never showing how to heap by v[1] or by a dict value.",
+ "note": "Scene moved to Lab/PyNotes/handbook.md (Markdown instead of the original HTML artifact); its heap section holds only heapify/push/pop, max-heap by negation and a plain (dist, node) tuple. The prior turn (adding list operators) mirrors the original's preceding handbook edit; its Grep result reflects the file before that edit.",
+ "prefix_sha256": "df9e009bc2a85165714b371c8d7e8d6b6c5877f34047e0b624c1771ad9fbbe7f",
+ "prefix_lines": 7,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

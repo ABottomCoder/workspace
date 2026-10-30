@@ -1,0 +1,40 @@
+{
+ "id": "C02-watermark-window",
+ "derived_from": "C02",
+ "kind": "control",
+ "cls": "over-caution",
+ "split": "guard",
+ "prompt": "先提出一个疑问，为啥是读到10:01:15之后的数据，如果是10:00-10:01的点击，那么应该是搜集10:00:00-10:00:59.99999的数据才对吧。\n\n回答追问：watermark我理解会停，但是在下次新数据到来时，刷新为新数据所处时间窗口",
+ "pass": "Explains that the 10:00 window holds events with event time in [10:00:00, 10:01:00) and that 10:01:15 is when the window closes (watermark = max event time minus the 15 s allowed lateness), answering both parts.",
+ "fail": "Says the window collects events up to 10:01:15, or misses the close-time explanation.",
+ "note": "Scene moved to the ch-adclick notes in SysDesign; the coach's previous answer (which says the window closes after reading events past 10:01:15) and its idle-partition follow-up question are kept nearly verbatim, without the original doc-patch side work.",
+ "start": "2026-10-21T17:10:00Z",
+ "turns": [
+  {
+   "user": "我在看 SysDesign 广告聚合那一章的笔记，第二个架构图，我理解kafka里面是事件吧，点击事件，谁点击了谁。问题是，后续的聚合服务是如何设计的呢，如果大量事件发生，一分钟内的聚合，没处理完一分钟窗口的情况会发生么，这样聚合数据就不可信了吧？所以我理解的话，聚合部分是一定要保证有足够算力？"
+  },
+  {
+   "assistant": [
+    "先看笔记里 watermark 和积压那两段。",
+    {
+     "tool": "Read",
+     "input": {
+      "file_path": "{{WTF}}/business/Lab/SysDesign/ch-adclick/notes.md",
+      "offset": 62,
+      "limit": 14
+     },
+     "result": "62\t### watermark\n63\t\n64\t- 聚合窗口：1 分钟 tumbling window 做每分钟计数；3 分钟、每分钟滑一次的窗口做\"最近 M 分钟 top N\"。\n65\t- watermark：给每个 1 分钟窗口尾部多等一段可调时长（示例 15 秒），让稍晚到的事件还能进窗。等得长 → 更准但延迟高；等得短 → 反之。\n66\t- 谁推进 watermark：聚合服务按自己读到的事件时间戳推进，watermark = 已读到的最大 event time − 允许的乱序量（15 秒）。\n67\t- 救不了迟到很久的事件，残余误差交给日终对账。\n68\t\n69\t### 积压时会算错吗\n70\t\n71\t- 不会，只会晚出。窗口按事件时间划分，关窗看 watermark，不看墙上时钟。\n72\t- 消费慢 → 读到的时间戳慢 → watermark 慢 → 窗口晚关。\n73\t- 积压的事件留在 Kafka #1（offset 未提交），不丢；lag 超过 Kafka 保留期才是真丢。\n74\t- 算力决定延迟，不决定正确性：平均消费速率 ≥ 平均写入速率即可，峰值由 Kafka 缓冲。\n75\t",
+     "error": false
+    },
+    "你对 Kafka 的理解对：里面是一条条点击事件（谁、点了哪个广告、什么时刻点的、click_id）。\n\n**结论：处理不过来也不会算错，只会晚出结果。** 你担心的情况，前提是窗口\"到点就关\"（按墙上时钟）。这一章里窗口什么时候关，看的是 watermark，而 watermark 按事件时间走。\n\n**机制：**\n- **窗口装什么**：\"10:00 窗口\"装的是事件时间在 10:00–10:01 的点击，不是\"10:00 这一分钟里处理到的点击\"。\n- **谁推进 watermark**：聚合服务自己，依据是它**读到的事件时间戳**。积压时它还在读 10:00 的事件，watermark 就停在 10:00 附近，10:00 窗口不关。等它追上来、读到 10:01:15 之后的事件，才关窗输出。这时 10:00 的事件已经全读到了。\n- **没处理的事件在哪**：在 Kafka #1 里，offset 没提交，不会丢。\n\n**所以算力决定的是延迟，不是正确性：**\n- **够用的标准**：平均消费速度 ≥ 平均写入速度。峰值 5 万 QPS 由 Kafka 缓冲吸收，不需要按峰值配满。\n- **长期不够**：lag 一直涨，报表越来越晚，超出\"分钟级\"的要求。要扩容：加聚合节点（上限是 partition 数），或者把热点广告拆开处理。\n- **真丢数据的情况**：lag 超过了 Kafka 的保留期，事件被删。\n\n**你担心的场景确实存在，但只在用 processing time 时：** 积压期间读到的事件全被算进\"现在\"这个窗口，结果就错了。这也是本章不选 processing time 的又一个理由。\n\n**追问（可选，一句话答）：** 如果某个 partition 很久没有新事件（比如某个地区深夜），watermark 会怎样？"
+   ]
+  }
+ ],
+ "asserts": [
+  [
+   "contains",
+   "business/Lab/SysDesign/ch-adclick/notes.md",
+   "已读到的最大 event time − 允许的乱序量（15 秒）"
+  ]
+ ]
+}

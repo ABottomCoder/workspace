@@ -1,0 +1,17 @@
+{
+ "id": "T09-reply-language-firmware",
+ "derived_from": "T09",
+ "kind": "target",
+ "cls": "language",
+ "split": "holdout",
+ "prompt": "“用 LG OnScreen Control 更新 27GP950 的固件，LG 出过修 DSC 黑屏的固件。”\n你说的这个，你现在能查到这个屏幕的固件是否已经做过黑屏固件的更新么",
+ "pass": "The reply's prose is in Chinese (code, commands and quoted names may be in English).",
+ "fail": "The reply's prose is mainly in English.",
+ "auto": {
+  "cjk_min": 0.5
+ },
+ "note": "Reconstructed drift pressure from the original: the first assistant turn narrates its tool calls in English and the PowerShell output is English, while its final answers are Chinese. As in the original, that turn floats the unsourced LG-firmware claim the user now quotes (a deliberate carry-over, needed for the prompt).",
+ "prefix_sha256": "76cf1a79e0d88f88faf4abb691404b78b3a50c9dbbb42f2560c9c148fe4d280e",
+ "prefix_lines": 11,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}
