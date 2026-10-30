@@ -231,4 +231,12 @@ test_framework_set_rebuilds_identically() {
   done
 }
 
+test_replay_only_rejects_unknown_ids() {
+  # a dropped --only id is a case that never runs (a CRLF slot file lost the last id of every line)
+  g="$(native_path "$REPO/tools/eval/golden/framework-v1")"
+  [ -d "$g" ] || return 0
+  out=$(python3 "$REPO/tools/eval/replay.py" --rev HEAD --golden "$g" --only "C04-reverse-list,no-such-case" --k 0 --tag t 2>&1); rc=$?
+  assert_eq "$rc" 1 "unknown id fails"; assert_contains "$out" "no-such-case"
+}
+
 run_tests

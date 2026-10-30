@@ -344,7 +344,10 @@ def main():
             cases.append(c)
     else:
         cases = json.load(open(flag(args, "--cases"), encoding="utf-8"))
-    only = set(filter(None, (flag(args, "--only") or "").split(",")))
+    only = set(filter(None, (s.strip() for s in (flag(args, "--only") or "").split(","))))
+    unknown = only - {c["id"] for c in cases}
+    if unknown:  # a silently dropped id is a case that never runs (seen: a CRLF slot file lost the last id per line)
+        raise SystemExit(f"--only: no such case(s): {sorted(unknown)}")
     cases = [c for c in cases if not only or c["id"] in only]
     if flag(args, "--tier"):  # golden: core (the gate's set) or extended, from <version>/tiers.json
         tier = set(json.load(open(os.path.join(golden, "tiers.json"), encoding="utf-8"))[flag(args, "--tier")])
