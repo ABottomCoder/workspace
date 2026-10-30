@@ -97,3 +97,9 @@ How to write, address, deliver and frame messages and documents so the right per
 **Root cause:** The industry-default meaning of an overloaded word was assumed.
 **Rule:** When a strategic word can mean different things (productize, launch, harden), confirm the person's definition first. For refactor proposals, settle target scale and time window before estimating; they change the investment tenfold.
 **Seen:** 1
+
+### A channel sweep opens every thread, not just the top level
+**Mistake:** A "what needs doing" sweep read a channel's top-level history and reported a question as unanswered; the user had already replied in its thread.
+**Root cause:** The concise channel read lists thread replies inline or not at all, without showing that they are replies; the answers sat in threads that were never opened.
+**Rule:** In a sweep, read the channel in the detailed format, open every thread with replies newer than the window (`read_thread`), and judge "still open" only after reading the whole thread. If a message's place is unclear, search for it to get its `thread_ts`.
+**Seen:** 1

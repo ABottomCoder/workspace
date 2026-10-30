@@ -20,7 +20,7 @@ Entries are ordered by Seen.
 - [engineering](engineering.md) (25) — generic code and framework gotchas (frontend, backend, database, infra code)
 - [tooling-and-environment](tooling-and-environment.md) (33) — shell, processes, schedulers, CLIs, browsers, platform quirks
 - [data-and-production](data-and-production.md) (19) — restarts, migrations, destructive ops, backups, production data and environments
-- [communication](communication.md) (16) — writing for the reader, threads, reports, client promises, user-facing copy
+- [communication](communication.md) (17) — writing for the reader, threads, reports, client promises, user-facing copy
 - [multi-session-and-bots](multi-session-and-bots.md) (12) — parallel sessions and chat bots: identities, listeners, shared files, message delivery
 - [git-and-release](git-and-release.md) (14) — reviews, PRs, branches, destructive git, deploy and CI proof
 - [planning-and-scope](planning-and-scope.md) (12) — estimates, scope discipline, plans as checkable claims, design trade-offs
