@@ -137,6 +137,9 @@ print(sb("add", "--runs", a, "--baseline").returncode)             # 0
 print(sb("add", "--runs", a, "--baseline").returncode)             # duplicate -> 1
 b = runs("B", "bbb", lambda c: 4 if c.startswith("H") else 4)
 print("GATE PASSED" in sb("compare", "--runs", b).stdout)          # holdout 50% -> 100%, guards kept
+sb("add", "--runs", b); print(sb("promote", "B").returncode)      # the candidate shipped -> 0
+dd = runs("D", "ddd", lambda c: 4)
+print("GATE NOT PASSED" in sb("compare", "--runs", dd).stdout)    # B is the baseline now: no gain over it
 c = runs("C", "ccc", lambda c: 4 if c.startswith("H") else (0 if c == "G0" else 4))
 print("fell from" in sb("compare", "--runs", c).stdout)            # a guard collapses
 e = runs("E", "bbb", lambda c: 4, cli="9.9.9")
@@ -149,7 +152,7 @@ import glob
 print(len(glob.glob(os.path.join(H, "data", "*_aaa_t1-core.html"))) == 1)  # the version report of the added entry
 PY
 )
-  assert_eq "$(echo $out | tr -d '\r')" "2 1 0 1 True True 2 True 2 True" "scoreboard: shared board refuses other sets, baseline, duplicate, gate pass, guard fall, fingerprint mismatch, process fall, tier change"
+  assert_eq "$(echo $out | tr -d '\r')" "2 1 0 1 True 0 True True 2 True 2 True" "scoreboard: shared board refuses other sets, baseline, duplicate, gate pass, promote, guard fall, fingerprint mismatch, process fall, tier change"
 }
 
 test_stage_world_applies_overlay_as_of_cut() {

@@ -7,6 +7,7 @@ change (a changed case set is a new golden version, so a new fingerprint).
     python3 tools/eval/scoreboard.py add     --cases <golden dir> --runs <judged run dir> [--tier core] [--baseline]
                                              [--report <path>] [--note "..."]      --baseline: this is the current best
     python3 tools/eval/scoreboard.py compare --cases <golden dir> --runs <judged run dir> [--tier core]
+    python3 tools/eval/scoreboard.py promote <tag> [--tier core]     a recorded candidate shipped: now the baseline
     python3 tools/eval/scoreboard.py render
 
 An entry holds the fingerprint, the per-group pass rates and scores, and every case's passes, runs and mean score,
@@ -218,6 +219,18 @@ def main():
     sys.stdout.reconfigure(encoding="utf-8")  # a Windows console defaults to GBK
     cmd = args[0] if args else "render"
     if cmd == "render":
+        render()
+        return
+    if cmd == "promote":  # a recorded candidate that proved itself becomes the baseline (it shipped)
+        rows, tag = board(), args[1] if len(args) > 1 else None
+        hits = [x for x in rows if x["tag"] == tag and (not flag(args, "--tier") or x["tier"] == flag(args, "--tier"))]
+        if not hits:
+            sys.exit(f"no entry {tag} on the board")
+        for x in hits:
+            x["baseline"] = True
+        open(BOARD, "w", encoding="utf-8").write("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in rows))
+        for x in hits:  # its page now says it is the baseline; the comparison with the previous one is unchanged
+            write_report(x)
         render()
         return
     e = entry(args)
