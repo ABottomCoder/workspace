@@ -12,7 +12,7 @@ author has read is tuned to the test, not to the work.
 ## 0. Start
 
 - `main` clean and current (`git status`, `git pull`); attach to the eval work item if there is one and log the
-  round. Window: since the latest release tag (`git describe --tags --match 'ws-*' --abbrev=0`, its date); none →
+  round. Window: since the latest release tag (`git describe --tags --match 'v[0-9]*' --abbrev=0`, its date); none →
   the last 14 days.
 - Baseline: the latest baseline entry in `tools/eval/history/scoreboard.jsonl` for `framework-v1`, tier `core`,
   with today's model, `claude --version` and judge. None (the CLI updated, say) → re-baseline the current `main`
@@ -56,8 +56,8 @@ tier, so they are first exercised in step 3; nothing of the pilot goes on the sc
 
 **Effective** (the comparison passes the gate, and every case flagged "read by hand" was read and is fine):
 `scoreboard.py promote OPT-<date> --tier core`; merge `opt/<date>` into `main` (no fast-forward) with the history
-files, `bash tests/run.sh`, push; tag `ws-YYYY.MM.DD` (`-2`, `-3` for a second round that day), push the tag;
-`gh release create <tag> --title "<tag>" --notes-file <file>`: three to six English bullets on what changed and
+files, `bash tests/run.sh`, push; tag `v<N+1>` on the evaluated rev, where `v<N>` is the latest release (`v0` = the
+first baseline, 2026-10-30), push the tag; `gh release create v<N+1> --title "v<N+1> · <YYYY-MM-DD>" --notes-file <file>`: three to six English bullets on what changed and
 why, the scores against the previous release, and the path of the version report. Tell the user in their
 language what changed, in a few lines.
 
