@@ -163,13 +163,15 @@ w(os.path.join(g, "world", "user", "u.md"), "u")
 w(os.path.join(case, "overlay", "business", "a.py"), "at the cut")
 json.dump({"overlay_deleted": ["business/new.py"]}, open(os.path.join(case, "case.json"), "w"))
 os.makedirs(wt)
+w(os.path.join(wt, "tools", "eval", "golden", "fw", "C1", "case.json"), "answer key")
 replay.stage_world(wt, case)
 r = lambda *p: open(os.path.join(wt, *p)).read()
 print(r("business", "a.py"), "|", os.path.exists(os.path.join(wt, "business", "new.py")), "|", r("user", "u.md"))
 print(open(os.path.join(g, "world", "business", "a.py")).read())  # the frozen world itself is untouched
+print("keyless" if not os.path.exists(os.path.join(wt, "tools", "eval", "golden")) else "KEY LEFT")
 PY
 )
-  assert_eq "$(echo $out | tr -d '\r')" "at the cut | False | u today" "overlay wins, absent-then removed, world untouched"
+  assert_eq "$(echo $out | tr -d '\r')" "at the cut | False | u today keyless" "overlay wins, absent-then removed, world untouched, committed sets removed"
 }
 
 test_verify_golden_catches_any_edit() {
@@ -218,6 +220,15 @@ except replay.UnsafeReplay:
 PY
 )
   assert_eq "$out" "STOPPED True" "a write that ran stops the eval and leaves an alert"
+}
+
+test_framework_set_rebuilds_identically() {
+  # a committed portable set is frozen: rebuilding it from its source must give the same bytes
+  for v in "$REPO"/tools/eval/golden/*/; do
+    [ -d "$v" ] || continue; v=$(basename "$v"); d=$(new_tmp)
+    python3 "$REPO/tools/eval/build_framework.py" "$v" --out "$(native_path "$d/$v")" >/dev/null || { fail "$v: build failed"; continue; }
+    diff -r "$REPO/tools/eval/golden/$v" "$d/$v" >/dev/null || fail "$v: rebuild differs from the committed set"
+  done
 }
 
 run_tests

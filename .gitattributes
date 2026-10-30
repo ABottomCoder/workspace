@@ -9,3 +9,6 @@ kits/meeting-proxy/MeetingProxy.app/Contents/MacOS/* text eol=lf
 *.png binary
 *.jpg binary
 *.ico binary
+# Frozen eval sets are hashed byte for byte (tools/eval/README.md): never convert their line endings.
+tools/eval/golden/** -text
+tools/eval/golden-src/** -text
