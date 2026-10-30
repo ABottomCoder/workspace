@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>84cf3404 · framework-v1 all</title>
+<style>
+:root{--bg:#f7f6f3;--surface:#fff;--ink:#1f2328;--muted:#6b6f76;--faint:#9a9ea5;--line:#e6e3dd;--line-strong:#d4d0c8;
+--accent:#3b5b7a;--accent-soft:#e8eef4;--up:#2f6b4f;--up-soft:#e6f0ea;--down:#9a3b33;--down-soft:#f6e7e5;
+--mono:ui-monospace,"SFMono-Regular","Cascadia Mono",Consolas,monospace;
+--sans:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17191c;--surface:#1f2226;--ink:#e6e4df;--muted:#a0a3a8;
+--faint:#73777d;--line:#2d3136;--line-strong:#3a3f45;--accent:#8fb0cf;--accent-soft:#24303b;--up:#7fbf9c;--up-soft:#1f2e27;
+--down:#e09a91;--down-soft:#352321}}
+:root[data-theme="dark"]{--bg:#17191c;--surface:#1f2226;--ink:#e6e4df;--muted:#a0a3a8;--faint:#73777d;--line:#2d3136;
+--line-strong:#3a3f45;--accent:#8fb0cf;--accent-soft:#24303b;--up:#7fbf9c;--up-soft:#1f2e27;--down:#e09a91;--down-soft:#352321}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 var(--sans)}
+.page{max-width:960px;margin:0 auto;padding:48px 24px 80px}.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+color:var(--faint);margin:0 0 8px}h1{font-size:26px;line-height:1.3;font-weight:600;margin:0 0 10px}
+h2{font-size:17px;font-weight:600;margin:40px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.muted{color:var(--muted)}code{font:13px/1.5 var(--mono);background:var(--accent-soft);color:var(--accent);padding:1px 5px;
+border-radius:4px;word-break:break-all}.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:24px 0 4px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}.tile .n{font-size:12px;color:var(--faint)}
+.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:8px 14px;text-align:left;border-bottom:1px solid var(--line);
+white-space:nowrap}tr:last-child td{border-bottom:0}th{font-size:12px;font-weight:600;color:var(--muted);background:var(--bg)}
+.num{text-align:right;font-variant-numeric:tabular-nums}.up{color:var(--up)}.down{color:var(--down)}.ci{color:var(--faint)}
+.pill{display:inline-block;font-size:12px;line-height:1;padding:5px 9px;border-radius:999px;font-weight:600}
+.pill.pass{color:var(--up);background:var(--up-soft)}.pill.fail{color:var(--down);background:var(--down-soft)}
+.pill.base{color:var(--accent);background:var(--accent-soft)}.verdict{background:var(--surface);border:1px solid var(--line);
+border-radius:10px;padding:14px 18px;margin:12px 0}a{color:var(--accent)}
+@media (max-width:720px){.page{padding:32px 16px 60px}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<div class="page">
+<p class="eyebrow">workspace 版本运行报告 · 2026-10-29 21:34</p>
+<h1><code>84cf34049006</code> 在 framework-v1 / all 上的成绩 <span class="pill base">基线</span></h1>
+<p class="muted">k = 10 · 模型 claude-opus-5-5 · CLI 2.1.312 (Claude Code) · 判官 claude-sonnet-5-5 ×3 <code>e7cc4bd7</code> · 运行集 AA-fw1</p>
+<div class="tiles"><div class="tile"><div class="k">holdout</div><div class="v">69%</div><div class="n">16 题</div></div><div class="tile"><div class="k">dev</div><div class="v">86%</div><div class="n">10 题</div></div><div class="tile"><div class="k">guard</div><div class="v">94%</div><div class="n">10 题</div></div><div class="tile"><div class="k">每次运行</div><div class="v">$0.045</div><div class="n">共 $16.34</div></div></div>
+<p class="muted">framework-v1 baseline, all tiers</p>
+<h2>对比</h2><p class="muted">没有同一指纹的更早基线：这是该测试集、模型、CLI、判官组合下的第一份成绩。</p>
+<h2>各组</h2>
+<div class="table-wrap"><table><tr><th>组</th><th class="num">题数</th><th class="num">通过率</th><th class="num">分数</th></tr><tr><td>holdout</td><td class="num">16</td><td class="num">69%</td><td class="num">0.68</td></tr><tr><td>dev</td><td class="num">10</td><td class="num">86%</td><td class="num">0.83</td></tr><tr><td>guard</td><td class="num">10</td><td class="num">94%</td><td class="num">0.86</td></tr><tr><td>absence-count</td><td class="num">3</td><td class="num">100%</td><td class="num">0.95</td></tr><tr><td>language</td><td class="num">1</td><td class="num">100%</td><td class="num">0.74</td></tr><tr><td>lookup</td><td class="num">3</td><td class="num">100%</td><td class="num">0.94</td></tr><tr><td>misread</td><td class="num">7</td><td class="num">70%</td><td class="num">0.67</td></tr><tr><td>over-caution</td><td class="num">10</td><td class="num">94%</td><td class="num">0.86</td></tr><tr><td>unverified-claim</td><td class="num">12</td><td class="num">65%</td><td class="num">0.67</td></tr></table></div>
+<h2>每题</h2>
+<div class="table-wrap"><table><tr><th>题</th><th>分组</th><th class="num">通过</th><th class="num">分数</th></tr><tr><td>C01-hot-plug-dp</td><td class="muted">guard</td><td class="num">10/10</td><td class="num">0.88</td></tr><tr><td>C02-watermark-window</td><td class="muted">guard</td><td class="num">10/10</td><td class="num">0.76</td></tr><tr><td>C03-cassandra-mysql</td><td class="muted">guard</td><td class="num">10/10</td><td class="num">0.86</td></tr><tr><td>C04-reverse-list</td><td class="muted">guard</td><td class="num">9/10</td><td class="num">0.94</td></tr><tr><td>C05-atlas-dir</td><td class="muted">guard</td><td class="num">9/10</td><td class="num">0.92</td></tr><tr><td>C06-rebase-merge</td><td class="muted">guard</td><td class="num">10/10</td><td class="num">1.00</td></tr><tr><td>C07-chat-routing</td><td class="muted">guard</td><td class="num">10/10</td><td class="num">0.88</td></tr><tr><td>C08-reconnect-lifetime</td><td class="muted">guard</td><td class="num">10/10</td><td class="num">0.72</td></tr><tr><td>C10-shard-key-grading</td><td class="muted">guard</td><td class="num">8/10</td><td class="num">0.94</td></tr><tr><td>C12-deduce-q5-grading</td><td class="muted">guard</td><td class="num">8/10</td><td class="num">0.68</td></tr><tr><td>F01-client-pm</td><td class="muted">dev</td><td class="num">10/10</td><td class="num">0.98</td></tr><tr><td>F02-reference-memories</td><td class="muted">holdout</td><td class="num">10/10</td><td class="num">0.96</td></tr><tr><td>F03-gpu-driver-now</td><td class="muted">holdout</td><td class="num">10/10</td><td class="num">0.76</td></tr><tr><td>F04-fluent-bit</td><td class="muted">holdout</td><td class="num">10/10</td><td class="num">0.86</td></tr><tr><td>F05-voxnet-device</td><td class="muted">dev</td><td class="num">8/10</td><td class="num">0.90</td></tr><tr><td>F06-feedback-memories</td><td class="muted">dev</td><td class="num">10/10</td><td class="num">0.98</td></tr><tr><td>F07-weakness-tracker</td><td class="muted">holdout</td><td class="num">10/10</td><td class="num">0.98</td></tr><tr><td>F08-business-dirs</td><td class="muted">holdout</td><td class="num">10/10</td><td class="num">0.92</td></tr><tr><td>F09-pm-last-message</td><td class="muted">holdout</td><td class="num">10/10</td><td class="num">0.98</td></tr><tr><td>T02-lg-firmware-claim</td><td class="muted">dev</td><td class="num">10/10</td><td class="num">0.86</td></tr><tr><td>T03-tokyo-friend-tracking</td><td class="muted">dev</td><td class="num">10/10</td><td class="num">0.86</td></tr><tr><td>T04-move-blame</td><td class="muted">holdout</td><td class="num">1/10</td><td class="num">0.10</td></tr><tr><td>T08-idempotency-strawman</td><td class="muted">dev</td><td class="num">9/10</td><td class="num">0.88</td></tr><tr><td>T09-reply-language-firmware</td><td class="muted">holdout</td><td class="num">10/10</td><td class="num">0.74</td></tr><tr><td>T10-relay-read-local-code</td><td class="muted">holdout</td><td class="num">10/10</td><td class="num">0.80</td></tr><tr><td>T11-chat-ids-vs-body</td><td class="muted">dev</td><td class="num">10/10</td><td class="num">0.78</td></tr><tr><td>T12-zk-vs-lb</td><td class="muted">dev</td><td class="num">0/10</td><td class="num">0.39</td></tr><tr><td>T13-cap-grading-implicit-answer</td><td class="muted">holdout</td><td class="num">1/10</td><td class="num">0.48</td></tr><tr><td>T14-aliyun-us-compliance</td><td class="muted">holdout</td><td class="num">7/10</td><td class="num">0.55</td></tr><tr><td>T15-flat-report-timezone</td><td class="muted">dev</td><td class="num">10/10</td><td class="num">0.84</td></tr><tr><td>T17-tidewatch-flatten-gap</td><td class="muted">holdout</td><td class="num">0/10</td><td class="num">0.48</td></tr><tr><td>T19-novel-crossrealm-fix</td><td class="muted">dev</td><td class="num">9/10</td><td class="num">0.79</td></tr><tr><td>T20-deduce-concealment-overclaim</td><td class="muted">holdout</td><td class="num">6/10</td><td class="num">0.50</td></tr><tr><td>T23-novel-lifespan-contradiction</td><td class="muted">holdout</td><td class="num">5/10</td><td class="num">0.49</td></tr><tr><td>T24-fed-speech-unverified</td><td class="muted">holdout</td><td class="num">2/10</td><td class="num">0.48</td></tr><tr><td>T25-heapq-key-field</td><td class="muted">holdout</td><td class="num">9/10</td><td class="num">0.79</td></tr></table></div>
+<p class="muted">只读回放、单轮：长任务里的多步错误、真实动作和判官看不到的判断不在测量范围内。原始运行与判分留在本地 eval 数据目录，本页只存汇总。</p>
+</div>
+</body>
+</html>

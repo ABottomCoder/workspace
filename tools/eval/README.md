@@ -19,8 +19,11 @@ conversation excerpts: they never go into a repo. Only the fictional framework s
 
 ## Golden mode (the default for prompt changes)
 
-`replay.py --golden data/golden/<version>` replays a **frozen, offline** set, like test cases for an algorithm:
-each case's input, conversation prefix, world and rubric are fixed; only the framework under test differs.
+`replay.py --golden tools/eval/golden/<version>` replays a **frozen, offline** set, like test cases for an
+algorithm: each case's input, conversation prefix, world and rubric are fixed; only the framework under test
+differs. The committed, fictional framework sets (below) are the ones in use: the private sets mined from one
+person's sessions (`data/golden/v1`) were retired on 2026-10-29 and are kept only as history. The layout described
+here is shared by both kinds.
 
 - `golden/<v>/world/`: one shared snapshot of `business/` and `user/` (redacted copies): every text file up to
   300 KB plus every file a case has ever read, minus sessions, backups, the journal, intervention records and
@@ -49,15 +52,20 @@ invented) with a few synthetic turns as its prefix, keeping the failure pattern 
 tools: `replay.py --golden tools/eval/golden/framework-v1`. Source: `golden-src/<v>/` (one JSON per case +
 `world/`), built by `build_framework.py <v>`, deterministic (a test rebuilds every committed set byte for byte).
 A golden worktree has `tools/eval/golden*` removed before a case runs: the rubrics there are answer keys. Scores
-of a framework set compare only with its own baseline. Runs, verdicts and the scoreboard stay in `data/`.
+of a framework set compare only with its own baseline. Runs and verdicts stay in `data/`; the scores go to the
+shared history (next section).
 Measured on framework-v1: about 18 s and $0.04 per replay plus $0.04 per judged run (3 votes), so a core
 candidate run (26 cases × 10) takes about 26 minutes on 3 slots (`--slot`), 16 on 5.
 
 ## Scoreboard: score each version once
 
-`data/scoreboard.jsonl` (+ rendered `scoreboard.md`) holds one entry per scored run set: date, rev (+ patch hash),
-golden version and world hash, tier, k, model, `claude --version`, judge fingerprint (model, votes, hash of the
-verdict code), per-group pass rate and score, every case's passes, cost, tag, report.
+`tools/eval/history/` is the shared, committed record of how each workspace version did. `scoreboard.jsonl` holds
+one entry per scored run set: date, rev, golden version and world hash, tier, k, model, `claude --version`, judge
+fingerprint (model, votes, hash of the verdict code), per-group pass rate and score, every case's passes, cost,
+tag, report. `scoreboard.py add` also writes that entry's **version report**, an HTML page named
+`<YYYYMMDD-HHMM>_<rev8>_<golden>-<tier>.html` (groups, every case, the comparison with the baseline and the gate
+verdict for a candidate, the framework files changed since that baseline), and `index.html` lists them all. Only
+the committed framework sets are recorded there; any other set needs `WS_EVAL_BOARD=<local file>`.
 
 - A new version runs only itself: `scoreboard.py compare` pairs it with the latest **baseline** entry of the
   same fingerprint (bootstrap over cases on the stored per-case rates) and prints the gate verdict. Old versions
@@ -107,14 +115,18 @@ verdict code), per-group pass rate and score, every case's passes, cost, tag, re
 
 ## Procedure for a prompt change
 
-1. **Baseline on the scoreboard:** the current version's entry for this fingerprint (`scoreboard.md`, ★). None →
-   run the current version once (`--golden data/golden/v1 --tier core --k 10`), judge, `scoreboard.py add --baseline`.
+With `G=tools/eval/golden/framework-v1`:
+
+1. **Baseline on the scoreboard:** the current version's entry for this fingerprint (`history/index.html`, 基线).
+   None → run the current version once (`--golden $G --tier core --k 10`), judge, `scoreboard.py add --baseline`.
 2. **Pre-register the gate** in the change's spec before running B (default below).
-3. Commit the change on a branch, or pass it as `--patch` (applied in the worktree only); run **only the
-   candidate**: `replay.py --rev <rev> [--patch …] --golden data/golden/v1 --tier core --k 10 --tag B-…`, then
-   `judge.py --cases data/golden/v1 --runs … --jobs 4`.
-4. `scoreboard.py compare --cases data/golden/v1 --tier core --runs …` prints B against the baseline and the gate
-   verdict. Ship only if the gate holds; `add` the candidate either way (`--baseline` only if it ships).
+3. Commit the change on a branch, or pass it as `--patch` (applied in the worktree only). **Pilot first**: one or
+   two cases at `--k 1` through replay, judge and `compare`, counts checked at each step. Then run **only the
+   candidate**: `replay.py --rev <rev> [--patch …] --golden $G --tier core --k 10 --slot <n> --tag B-…` (3-5 slots,
+   split with `--only`), then `judge.py --cases $G --runs … --jobs 4`; check every case has k judged runs.
+4. `scoreboard.py compare --cases $G --tier core --runs …` prints B against the baseline and the gate verdict.
+   Ship only if the gate holds; `add` the candidate either way (`--baseline` only if it ships): that writes its
+   version report into `history/`. Not shipped → investigate or roll the change back.
 5. Before a big change, run `--tier extended` too. Every few weeks, or when results look odd, an anchor run of the
    baseline's own rev (core, k = 5): `compare` reports drift beyond ±10 points → re-baseline.
 
@@ -137,6 +149,12 @@ C07 10→8; no guard case fell to ≤ 5/10). Read: an oracle stuffed into `CLAUD
 change, so a guard flag on it is plausible, not proof the line is too tight. The
 fingerprint covers the tier's case list, so the core baseline was re-added from the same AA-v1 runs. Earlier gate
 (live world, AA-1582d80): holdout ≥ +10, guards ≥ −12.
+
+**On framework-v1** (`AA-fw1`: rev 84cf340, k = 10, core 26 = 14 discriminating + 2 always-failing + 10 guards):
+A/A holdout −5 % [−17, +5], dev +0 % [−11, +14], guards +0 % [−9, +9], score +0.00 [−0.05, +0.06]. The same gate
+holds: the positive control passes (holdout +34 % [+14, +55], process +0.15 [+0.08, +0.23]); the negative one is
+stopped on holdout, guards (lower bound −13) and process (−0.08 [−0.15, −0.01]). Six traps are weaker than in v1
+(T03, T11, T19, T23, T25, C08: shorter synthetic prefixes), T04 is harder; strengthening them is framework-v2.
 
 Re-run the A/A when the golden version, the model, the CLI or the judge changes: the floor belongs to that
 combination (the scoreboard fingerprint).

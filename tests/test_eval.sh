@@ -127,9 +127,12 @@ def runs(tag, rev, passes, cli="2.1.312", score=lambda c: 1.0):
             json.dump({"verdict": "PASS" if ok else "FAIL", "score": score(cid) if ok else 0.0, "judge": J}, open(os.path.join(d, f"{cid}.{i}.verdict.json"), "w"))
     return d
 sb = lambda *a: subprocess.run([sys.executable, os.path.join(R, "tools", "eval", "scoreboard.py"), *a, "--cases", g, "--tier", "core"],
-                               capture_output=True, text=True, encoding="utf-8", env=dict(os.environ, WS_EVAL_HOME=H))
+                               capture_output=True, text=True, encoding="utf-8", env=dict(os.environ, WS_EVAL_HOME=H, WS_EVAL_BOARD=os.path.join(H, "data", "scoreboard.jsonl")))
+shared = lambda *a: subprocess.run([sys.executable, os.path.join(R, "tools", "eval", "scoreboard.py"), *a, "--cases", g, "--tier", "core"],
+                                   capture_output=True, text=True, encoding="utf-8", env={k: v for k, v in os.environ.items() if k != "WS_EVAL_BOARD"})
 a = runs("A", "aaa", lambda c: 2 if c.startswith("H") else 4)
 print(sb("compare", "--runs", a).returncode)                       # no baseline yet -> 2
+print(shared("add", "--runs", os.path.join(H, "runs", "A")).returncode)  # a set outside tools/eval/golden never reaches the shared board -> 1
 print(sb("add", "--runs", a, "--baseline").returncode)             # 0
 print(sb("add", "--runs", a, "--baseline").returncode)             # duplicate -> 1
 b = runs("B", "bbb", lambda c: 4 if c.startswith("H") else 4)
@@ -142,10 +145,11 @@ f = runs("F", "fff", lambda c: 2 if c.startswith("H") else 4, score=lambda c: 0.
 print("process:" in sb("compare", "--runs", f).stdout)             # same pass rates, process scores fall
 json.dump({"core": [c for c in cases if c != "G2"], "extended": ["G2"]}, open(os.path.join(g, "tiers.json"), "w"))
 print(sb("compare", "--runs", b).returncode)                       # core membership changed: no comparable baseline -> 2
-print(os.path.exists(os.path.join(H, "data", "scoreboard.md")))
+import glob
+print(len(glob.glob(os.path.join(H, "data", "*_aaa_t1-core.html"))) == 1)  # the version report of the added entry
 PY
 )
-  assert_eq "$(echo $out | tr -d '\r')" "2 0 1 True True 2 True 2 True" "scoreboard: baseline, duplicate, gate pass, guard fall, fingerprint mismatch, process fall, tier change"
+  assert_eq "$(echo $out | tr -d '\r')" "2 1 0 1 True True 2 True 2 True" "scoreboard: shared board refuses other sets, baseline, duplicate, gate pass, guard fall, fingerprint mismatch, process fall, tier change"
 }
 
 test_stage_world_applies_overlay_as_of_cut() {

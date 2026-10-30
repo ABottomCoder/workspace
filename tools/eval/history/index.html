@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>评测历史</title>
+<style>
+:root{--bg:#f7f6f3;--surface:#fff;--ink:#1f2328;--muted:#6b6f76;--faint:#9a9ea5;--line:#e6e3dd;--line-strong:#d4d0c8;
+--accent:#3b5b7a;--accent-soft:#e8eef4;--up:#2f6b4f;--up-soft:#e6f0ea;--down:#9a3b33;--down-soft:#f6e7e5;
+--mono:ui-monospace,"SFMono-Regular","Cascadia Mono",Consolas,monospace;
+--sans:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17191c;--surface:#1f2226;--ink:#e6e4df;--muted:#a0a3a8;
+--faint:#73777d;--line:#2d3136;--line-strong:#3a3f45;--accent:#8fb0cf;--accent-soft:#24303b;--up:#7fbf9c;--up-soft:#1f2e27;
+--down:#e09a91;--down-soft:#352321}}
+:root[data-theme="dark"]{--bg:#17191c;--surface:#1f2226;--ink:#e6e4df;--muted:#a0a3a8;--faint:#73777d;--line:#2d3136;
+--line-strong:#3a3f45;--accent:#8fb0cf;--accent-soft:#24303b;--up:#7fbf9c;--up-soft:#1f2e27;--down:#e09a91;--down-soft:#352321}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 var(--sans)}
+.page{max-width:960px;margin:0 auto;padding:48px 24px 80px}.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+color:var(--faint);margin:0 0 8px}h1{font-size:26px;line-height:1.3;font-weight:600;margin:0 0 10px}
+h2{font-size:17px;font-weight:600;margin:40px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.muted{color:var(--muted)}code{font:13px/1.5 var(--mono);background:var(--accent-soft);color:var(--accent);padding:1px 5px;
+border-radius:4px;word-break:break-all}.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:24px 0 4px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}.tile .n{font-size:12px;color:var(--faint)}
+.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:8px 14px;text-align:left;border-bottom:1px solid var(--line);
+white-space:nowrap}tr:last-child td{border-bottom:0}th{font-size:12px;font-weight:600;color:var(--muted);background:var(--bg)}
+.num{text-align:right;font-variant-numeric:tabular-nums}.up{color:var(--up)}.down{color:var(--down)}.ci{color:var(--faint)}
+.pill{display:inline-block;font-size:12px;line-height:1;padding:5px 9px;border-radius:999px;font-weight:600}
+.pill.pass{color:var(--up);background:var(--up-soft)}.pill.fail{color:var(--down);background:var(--down-soft)}
+.pill.base{color:var(--accent);background:var(--accent-soft)}.verdict{background:var(--surface);border:1px solid var(--line);
+border-radius:10px;padding:14px 18px;margin:12px 0}a{color:var(--accent)}
+@media (max-width:720px){.page{padding:32px 16px 60px}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<div class="page">
+<p class="eyebrow">workspace 评测历史</p><h1>各版本成绩</h1><p class="muted">每行一个打过分的运行集，新的在上。只比较同一测试集、分层、模型、CLI、判官下的行（指纹见各报告）。</p><div class="table-wrap"><table><tr><th>时间</th><th>版本</th><th>角色</th><th>测试集 / 分层</th><th class="num">holdout</th><th class="num">dev</th><th class="num">guard</th><th></th></tr><tr><td>2026-10-29 21:34</td><td><code>84cf3404</code></td><td><span class="pill base">基线</span></td><td>framework-v1 / all</td><td class="num">69%</td><td class="num">86%</td><td class="num">94%</td><td><a href="20261029-2134_84cf3404_framework-v1-all.html">报告</a></td></tr><tr><td>2026-10-29 21:34</td><td><code>84cf3404</code></td><td><span class="pill base">基线</span></td><td>framework-v1 / core</td><td class="num">59%</td><td class="num">80%</td><td class="num">91%</td><td><a href="20261029-2134_84cf3404_framework-v1-core.html">报告</a></td></tr></table></div>
+</div>
+</body>
+</html>

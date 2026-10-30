@@ -18,7 +18,9 @@ current best is re-run once under the new fingerprint to set a new baseline.
 Drift: an anchor run of the baseline's own rev (core, small k) is compared the same way; when it moves past the
 A/A noise floor, the baseline is stale: re-baseline.
 
-Files: <eval home>/data/scoreboard.jsonl (append-only) and scoreboard.md (rendered).
+Files: tools/eval/history/scoreboard.jsonl (append-only, committed: the shared record of how each version did), one
+HTML version report per entry written by `add` (version_report.py) and history/index.html. Only the committed
+framework sets (tools/eval/golden/) are recorded there; raw runs and verdicts stay in the local eval data dir.
 """
 import glob, hashlib, json, os, random, sys
 from datetime import datetime
@@ -26,7 +28,8 @@ from datetime import datetime
 HERE = os.path.dirname(os.path.abspath(__file__))
 MAIN = os.path.dirname(os.path.dirname(HERE))
 EVAL_HOME = os.environ.get("WS_EVAL_HOME") or os.path.join(os.path.dirname(MAIN), os.path.basename(MAIN) + "-eval")
-BOARD = os.path.join(EVAL_HOME, "data", "scoreboard.jsonl")
+HISTORY = os.path.join(HERE, "history")
+BOARD = os.environ.get("WS_EVAL_BOARD") or os.path.join(HISTORY, "scoreboard.jsonl")
 # Gate (README "Gate"), from the A/A on golden v1 core (AA-v1, 5 vs 5 runs: holdout +3 % [-6, +11], guard +10 %
 # [-7, +33]), for k = 10 per arm: B - A on the mean per-case pass rate, paired over cases. score_min_lo: the process
 # check on dev + holdout mean scores (A/A floor about ±0.04; NEG-v1, the evidence rules removed, fell -0.14 on dev
@@ -129,13 +132,15 @@ def render():
         out.append(f"| {e['date'][:16]} | {e['rev'][:12]} | {'★' if e.get('baseline') else ''} | {e['golden']} ({e['world']}) | {e['tier']} ({len(e['cases'])}) | {e['k']} | {e['model']} | "
                    f"{e['cli'].split()[0]} | {j['model']}×{j['votes']} {j['sha256'][:8]} | {pct('holdout')} | {pct('dev')} | "
                    f"{pct('guard')} | {sc} | {e['cost_per_run']:.2f} | {e['tag']} | {e.get('report') or ''} |")
-    open(os.path.join(os.path.dirname(BOARD), "scoreboard.md"), "w", encoding="utf-8").write("\n".join(out) + "\n")
+    if os.path.dirname(os.path.abspath(BOARD)) == HISTORY:
+        import version_report
+        version_report.write_index(rows)
     print("\n".join(out))
 
 
 def compare(new, base, boot=10000):
     """Paired bootstrap over cases on the stored per-case rates; the gate verdict for the new set."""
-    rng, lines, ok = random.Random(0), [], True
+    rng, lines, ok, rows = random.Random(0), [], True, []
     ids_all = [i for i in new["cases"] if i in base["cases"]]
 
     def ci(d):
@@ -155,13 +160,15 @@ def compare(new, base, boot=10000):
         lo, hi = ci(d)
         mb, mn = sum(rate(base, i) for i in ids) / len(ids), sum(rate(new, i) for i in ids) / len(ids)
         res[name] = (mn - mb, lo, hi)
+        rows.append((name, len(ids), mb, mn, lo, hi))
         lines.append(f"| {name} | {len(ids)} | {mb:.0%} | {mn:.0%} | {mn - mb:+.0%} | [{lo:+.0%}, {hi:+.0%}] |")
     sids = [i for i in ids_all if (i in group_ids(new, "holdout") or i in group_ids(new, "dev"))
             and score(new, i) is not None and score(base, i) is not None]
-    s = None
+    s, srow = None, None
     if sids:  # process: mean score (0.4 process + 0.6 outcome), which moves when pass rates do not
         d = [score(new, i) - score(base, i) for i in sids]
         s = (sum(d) / len(d), *ci(d))
+        srow = (len(sids), sum(score(base, i) for i in sids) / len(sids), sum(score(new, i) for i in sids) / len(sids), *s)
         lines.append(f"\n| Score (dev + holdout) | {len(sids)} | {sum(score(base, i) for i in sids) / len(sids):.2f} | "
                      f"{sum(score(new, i) for i in sids) / len(sids):.2f} | {s[0]:+.2f} | [{s[1]:+.2f}, {s[2]:+.2f}] |")
     same_rev = new["rev"] == base["rev"]
@@ -169,7 +176,7 @@ def compare(new, base, boot=10000):
         d, lo, hi = res.get("holdout", (0, 0, 0))
         verdict = (f"DRIFT: holdout moved {d:+.0%} beyond the ±{FLOOR:.0%} floor: re-baseline" if abs(d) > FLOOR
                    else f"no drift: holdout {d:+.0%} within ±{FLOOR:.0%}")
-        return "\n".join(lines), verdict
+        return "\n".join(lines), verdict, (rows, srow, verdict)
     h, g = res.get("holdout"), res.get("guard")
     why = []
     if not h or h[0] < GATE["holdout_min_gain"] or h[1] <= 0:
@@ -185,7 +192,21 @@ def compare(new, base, boot=10000):
     falls = [i for i in ids_all if rate(base, i) == 1 and rate(new, i) < 1]
     verdict = ("GATE PASSED" if not why else "GATE NOT PASSED: " + "; ".join(why)) + \
               (f". Read by hand before shipping (always passed, now not): {falls}" if falls else "")
-    return "\n".join(lines), verdict
+    return "\n".join(lines), verdict, (rows, srow, verdict)
+
+
+def write_report(e):
+    """The entry's HTML version report (history/<time>_<rev>_<set>-<tier>.html); sets e["report"]. A candidate is
+    compared with the current baseline, a baseline with the previous one of the same fingerprint, if any."""
+    import version_report
+    prior = [x for x in board() if fingerprint(x) == fingerprint(e) and x.get("baseline") and x["date"] < e["date"]
+             and x["tag"] != e["tag"]]
+    base = prior[-1] if prior else None
+    e["report"] = version_report.name_of(e)
+    out = os.path.join(os.path.dirname(os.path.abspath(BOARD)), e["report"])
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    open(out, "w", encoding="utf-8", newline="\n").write(version_report.render(e, base, compare(e, base)[2] if base else None))
+    return out
 
 
 def group_ids(e, name):
@@ -203,9 +224,15 @@ def main():
     man, cases = load_golden(flag(args, "--cases"), flag(args, "--tier"))
     e["group_ids"] = groups(cases)
     if cmd == "add":
+        golden_root = os.path.join(HERE, "golden")
+        if not os.environ.get("WS_EVAL_BOARD") and \
+                os.path.commonpath([os.path.abspath(flag(args, "--cases")), golden_root]) != golden_root:
+            sys.exit("the shared scoreboard records only the committed framework sets (tools/eval/golden/); "
+                     "set WS_EVAL_BOARD to a local file for any other set")
         if any(x["tag"] == e["tag"] and fingerprint(x) == fingerprint(e) for x in board()):
             sys.exit(f"{e['tag']} is already on the board under this fingerprint")
         e["baseline"] = "--baseline" in args  # the current best (shipped) version; candidates are recorded without it
+        print(write_report(e))
         with open(BOARD, "a", encoding="utf-8") as f:
             f.write(json.dumps(e, ensure_ascii=False) + "\n")
         render()
@@ -217,7 +244,7 @@ def main():
                   f"{e['judge']}). Something changed (CLI auto-update, model, judge, golden version): re-run the current "
                   f"best version once on this fingerprint and `add` it as the new baseline, then compare again.")
             sys.exit(2)
-        table, verdict = compare(e, base[-1])
+        table, verdict, _ = compare(e, base[-1])
         print(f"New {e['tag']} ({e['rev'][:12]}) vs baseline {base[-1]['tag']} ({base[-1]['rev'][:12]}, {base[-1]['date'][:10]})\n")
         print(table + "\n\n" + verdict)
         return
