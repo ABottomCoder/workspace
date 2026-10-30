@@ -50,6 +50,8 @@ tools: `replay.py --golden tools/eval/golden/framework-v1`. Source: `golden-src/
 `world/`), built by `build_framework.py <v>`, deterministic (a test rebuilds every committed set byte for byte).
 A golden worktree has `tools/eval/golden*` removed before a case runs: the rubrics there are answer keys. Scores
 of a framework set compare only with its own baseline. Runs, verdicts and the scoreboard stay in `data/`.
+Measured on framework-v1: about 18 s and $0.04 per replay plus $0.04 per judged run (3 votes), so a core
+candidate run (26 cases × 10) takes about 26 minutes on 3 slots (`--slot`), 16 on 5.
 
 ## Scoreboard: score each version once
 
