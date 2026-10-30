@@ -1,0 +1,187 @@
+{
+ "version": "framework-v1",
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5",
+ "world_files": 57,
+ "cases": {
+  "C01-hot-plug-dp": {
+   "case_sha256": "8b152a50016fb85219b7b52354808bb600b3d8226983e49448212b7a564de3af",
+   "prefix_sha256": "2d3d7eaf4d7f15dfd9aceda25f24eb37d591fb873dd55b0499239e49c1730e01",
+   "kind": "control"
+  },
+  "C02-watermark-window": {
+   "case_sha256": "97f191dcadfb4ddf30bc561080f1e77380b1a7766d802a876f6b36195b982199",
+   "prefix_sha256": "6d026c231ecaf455d71c56a67b38ee9b11d1c34f86b4276bf7b06b3f643ba04f",
+   "kind": "control"
+  },
+  "C03-cassandra-mysql": {
+   "case_sha256": "fd3b4a79c276ba160d45f6fd56d2f396fa6c4868c894ba072407caada31c45e6",
+   "prefix_sha256": "d2f500f70790fd50ec390f70063d4448a1e973e8d3f28fe7166b1385290ef262",
+   "kind": "control"
+  },
+  "C04-reverse-list": {
+   "case_sha256": "afc112dff78fd54079a75b213242fb76a98d3e492c6c7339daaba6b462b1d102",
+   "prefix_sha256": null,
+   "kind": "control"
+  },
+  "C05-atlas-dir": {
+   "case_sha256": "efd68beca2a59c18d785bead607d254676319bd40800ee244e56127add660203",
+   "prefix_sha256": null,
+   "kind": "control"
+  },
+  "C06-rebase-merge": {
+   "case_sha256": "3f8ff0898890079104895765bc6d3de6f2eeb5b15bb84a52fc7f8de04ba19a20",
+   "prefix_sha256": null,
+   "kind": "control"
+  },
+  "C07-chat-routing": {
+   "case_sha256": "de7dd3039ea120f801182bafd46e74bbcbd2e6e5369cf224fe75d222c5939d3c",
+   "prefix_sha256": "f52eeb66ea4c1e392e676ffb23c54b5a8346a4038ad9fedf1bea36afe1a3d1e3",
+   "kind": "control"
+  },
+  "C08-reconnect-lifetime": {
+   "case_sha256": "70775fefa39f515add1c74f90421b382e11f2595927a7380cbf8e1594d68147c",
+   "prefix_sha256": "a779a6e829e7ec9b9b114522d36bdedb82f70e4739e2e82bf84fa23f244809dc",
+   "kind": "control"
+  },
+  "C10-shard-key-grading": {
+   "case_sha256": "70a1b98742bc100f3ae7dc2d494874d9576828d6a8f74c158eac9311abdaed03",
+   "prefix_sha256": "237a53cc40af46b729f2a70b084caa331d7e91850e1502b9c2fc98a45aa5e4ed",
+   "kind": "control"
+  },
+  "C12-deduce-q5-grading": {
+   "case_sha256": "0881cc464682259d286db0ff804c5e7e3b620b7e8e9805df340b702ea4026c00",
+   "prefix_sha256": "391983b8175607738a6396dfc8c9a32960dc00dd773c4e5b8b7cf3f52f75d1ae",
+   "kind": "control"
+  },
+  "F01-client-pm": {
+   "case_sha256": "1b79cbd189d8619c02dfca2b0eb719056f29cf764e5e2e1fd759503b2348bd18",
+   "prefix_sha256": null,
+   "kind": "fact"
+  },
+  "F02-reference-memories": {
+   "case_sha256": "a0e61643b327789ce8e6a07ce19309e304a64d07d6980c6bcef787cc821c2910",
+   "prefix_sha256": null,
+   "kind": "fact"
+  },
+  "F03-gpu-driver-now": {
+   "case_sha256": "16733d5525f03c59a16cedca33dd94a4c6cb2104b3bb856cc9c9f45306ccacda",
+   "prefix_sha256": null,
+   "kind": "fact"
+  },
+  "F04-fluent-bit": {
+   "case_sha256": "e36575e7dd904d755027c288aeac90dae5cb6083eb68e8d6b2aa2d1851c3adb3",
+   "prefix_sha256": null,
+   "kind": "fact"
+  },
+  "F05-voxnet-device": {
+   "case_sha256": "344d2888283b2805c2bf2bf8df3f1cec110164e9a2dfaea47daf7e69ca6875dc",
+   "prefix_sha256": null,
+   "kind": "fact"
+  },
+  "F06-feedback-memories": {
+   "case_sha256": "745da1a53f04bde8befbbcac3039e6e2de42a546e798c8101dc744a28b98bcbe",
+   "prefix_sha256": null,
+   "kind": "fact"
+  },
+  "F07-weakness-tracker": {
+   "case_sha256": "fc2b495d378dbcf6fdf81fef72dc04e748bd260e7fc84e31e4744f3471c42c83",
+   "prefix_sha256": null,
+   "kind": "fact"
+  },
+  "F08-business-dirs": {
+   "case_sha256": "4cddd37e7b235b494553cb70d28f13c0da685bd48886575860a5de4475e98d51",
+   "prefix_sha256": null,
+   "kind": "fact"
+  },
+  "F09-pm-last-message": {
+   "case_sha256": "be5d8175bd53820b75a0b2e94d294d6b2e82ac91485b4787a996482ec6677261",
+   "prefix_sha256": null,
+   "kind": "fact"
+  },
+  "T02-lg-firmware-claim": {
+   "case_sha256": "d4631ef2cb6d93f438f55f5d8a648f81877175a0a35e82b5fb2b0a26856b989f",
+   "prefix_sha256": null,
+   "kind": "target"
+  },
+  "T03-tokyo-friend-tracking": {
+   "case_sha256": "0ee663224294d143e86833352213b47dad4bb254c4b278b1c70fb44f5462d0e4",
+   "prefix_sha256": "cb437c69536f2f04afcf16397463ae4e1d5d61a35551ed2be6886bfb631d4b54",
+   "kind": "target"
+  },
+  "T04-move-blame": {
+   "case_sha256": "6302395b8a9420de7cf2334721e4d0ee675ce402eaaa663ec0c3793c915a7fc9",
+   "prefix_sha256": "3d6369cc6ca518128617587191035a3a2d545fb431f3389ca917af3ea34cb4dc",
+   "kind": "target"
+  },
+  "T08-idempotency-strawman": {
+   "case_sha256": "77ff6036938baad334be22f5cf5892d90d0f75371aafd914e29f12729df6cc96",
+   "prefix_sha256": "e3cf128b8ccba1b70f9e4b414c68fd27193a7bd48cdb1814fe364829f110d3b8",
+   "kind": "target"
+  },
+  "T09-reply-language-firmware": {
+   "case_sha256": "dae9c475a9160390726076615a6fdf989f9246bafc2e343afc4aeadd5c6a54fd",
+   "prefix_sha256": "76cf1a79e0d88f88faf4abb691404b78b3a50c9dbbb42f2560c9c148fe4d280e",
+   "kind": "target"
+  },
+  "T10-relay-read-local-code": {
+   "case_sha256": "a54c934d5abb20e42d4ad8fb663097be9814f34b08b5f56387afa97146c19695",
+   "prefix_sha256": "c744c2fc5e4d245a4ce2e7a06ade06772821d23b946fa7bc30135ccbe2f2eaa6",
+   "kind": "target"
+  },
+  "T11-chat-ids-vs-body": {
+   "case_sha256": "6a8472df4b83fad8a848d1f135dc01cf61b57931096682da5addec22966720f1",
+   "prefix_sha256": "ae273c86ff62118e635b0bc8f35ad45f508864d3af4c23cdc3c8d20a528e071f",
+   "kind": "target"
+  },
+  "T12-zk-vs-lb": {
+   "case_sha256": "e6fff08b4e547cbfa910394e545c24b4022c745cd68169423f04ecc53aaf5189",
+   "prefix_sha256": "9f18c5d393e37618aaf9e363561f62cbee7948be065213c98c58ea54a66649dc",
+   "kind": "target"
+  },
+  "T13-cap-grading-implicit-answer": {
+   "case_sha256": "ae7a4e78bbf39124c2a98f95f2e5ca6dfd0fbc1b720d6c1bf1dc7d3a6ffdcd34",
+   "prefix_sha256": "2dcfe6b2a1f8ecf8fab424e49522be7eade7d23c142d84b6ca03bce21d65bf39",
+   "kind": "target"
+  },
+  "T14-aliyun-us-compliance": {
+   "case_sha256": "b7c157fa31bca0f56f72b2e2655a91241d192e5e1f9b69ba5d396e75fb792850",
+   "prefix_sha256": "9ad489df74dbb4912b7acf9852a766740d46ef79222e2d326f2be8a89c3a2d53",
+   "kind": "target"
+  },
+  "T15-flat-report-timezone": {
+   "case_sha256": "9aaaf9a91880c9565e4a18e5cdcdac64f25800f6414156a155d32373304f4b78",
+   "prefix_sha256": "a42d4f5a7bb6834300e405ed0ad80abb8c64e7f0b21c43bb718e0a0e87de2014",
+   "kind": "target"
+  },
+  "T17-tidewatch-flatten-gap": {
+   "case_sha256": "30112334e1ec52bf28215d10b61dcee0d7d37a26a3ced1f49a7137dd82dfaf4b",
+   "prefix_sha256": "e888c388e5f282236ebda1f0341266f37eeee115b4dac5a307496431eed36c5e",
+   "kind": "target"
+  },
+  "T19-novel-crossrealm-fix": {
+   "case_sha256": "3420688548f0385e5fd98df807cc47f6a49cad55a4bbef9fcb181d3f960a7eec",
+   "prefix_sha256": "f1f9495a062200de4abf6d86e106133a83c4dc5fd74d225f34f50300b032dcce",
+   "kind": "target"
+  },
+  "T20-deduce-concealment-overclaim": {
+   "case_sha256": "381f20788ee23551b09618ac2dbec89f9c3d5a89d63b2b7922129760161bb5e1",
+   "prefix_sha256": "64ea446edbfbf79a0ec2f5f17b95b311e893856974e8aa3216977cba28570e2f",
+   "kind": "target"
+  },
+  "T23-novel-lifespan-contradiction": {
+   "case_sha256": "6df8617d3f742ab794eb50330da516ed1319f85de22de406eda2aba5a71b10fd",
+   "prefix_sha256": "31e2714d6b193928562b32cdc5baf22d2be794eca1aa8d03a83859cdf5e2a00d",
+   "kind": "target"
+  },
+  "T24-fed-speech-unverified": {
+   "case_sha256": "6dcff07ca8efd02417e5d33c0c5b0958f2518ffe7e55c54ce56d85aa04518f4d",
+   "prefix_sha256": "59e8c92fb55e4a7a901b5d78f5963f2deee7569cc1c7ab4fab4eb8cb8fff356b",
+   "kind": "target"
+  },
+  "T25-heapq-key-field": {
+   "case_sha256": "bfa805707cc1f9028ba292bff3e5750b7b7d4ae90a0e9a5bed9c01178c8768b0",
+   "prefix_sha256": "df9e009bc2a85165714b371c8d7e8d6b6c5877f34047e0b624c1771ad9fbbe7f",
+   "kind": "target"
+  }
+ }
+}

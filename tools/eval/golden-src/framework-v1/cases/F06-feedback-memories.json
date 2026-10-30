@@ -1,0 +1,28 @@
+{
+ "id": "F06-feedback-memories",
+ "derived_from": "F06",
+ "kind": "fact",
+ "cls": "absence-count",
+ "split": "dev",
+ "prompt": "user/memory 里一共有几条 feedback 类型的记忆？给我数字",
+ "pass": "7.",
+ "fail": "Any other number.",
+ "auto": {
+  "contains_any": [
+   "7"
+  ],
+  "calls_any": [
+   "Glob",
+   "Grep",
+   "Read"
+  ]
+ },
+ "auto_only": true,
+ "asserts": [
+  [
+   "count_type",
+   "feedback",
+   7
+  ]
+ ]
+}

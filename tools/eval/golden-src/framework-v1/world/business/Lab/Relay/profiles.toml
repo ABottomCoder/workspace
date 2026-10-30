@@ -1,0 +1,9 @@
+# One profile per use. channels = Discord channel ids the bot listens in.
+
+[notes]
+bot = "Relay#2207"
+channels = ["1400000000000000101"]
+
+[tidewatch]
+bot = "Tidewatch#7731"
+channels = ["1400000000000000303"]

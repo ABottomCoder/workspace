@@ -1,0 +1,48 @@
+{
+ "id": "T13-cap-grading-implicit-answer",
+ "derived_from": "T13",
+ "kind": "target",
+ "cls": "misread",
+ "split": "holdout",
+ "start": "2026-10-21T17:00:00Z",
+ "prompt": "C，consistency，一致性。\nA，availability，可用性\nP，partition tolerance，分区容错性\n\n三选二这个流行说法确实不够准确，因为在没有数据流动的时候，一个系统确实是可以同时做到CAP三者的，但只要有数据流动，网络就会出现分区，因为数据传输的物理时间不可避免，在这个期间就会形成网络分区。这也是为什么实际系统里P是必须有的。",
+ "pass": "Corrects the mechanism error (a partition is a communication break, not ordinary transfer latency) and, for 'when does the trade-off happen', credits that the user's answer implies it (P is unavoidable; without a partition all three hold), at most marking it implicit or shallow (e.g. missing what CP vs AP systems do during a partition).",
+ "fail": "Says the user did not answer the 'when does the trade-off happen' sub-question at all and counts it as omitted.",
+ "turns": [
+  {
+   "user": "继续系统设计，分片这章出题"
+  },
+  {
+   "assistant": [
+    "好，分片这章。",
+    {
+     "tool": "Read",
+     "input": {
+      "file_path": "{{WTF}}/business/Lab/SysDesign/ch-sharding/questions.md"
+     },
+     "result": "1\t# ch-sharding 练习题\n2\t\n3\t按顺序出，一次一题，答完点评再出下一题。\n4\t\n5\t1. 单表到了几十亿行，缓存和索引都救不动了，你决定水平分片（sharding）。选 shard key 要考虑哪几条标准？举一个坏 shard key 的例子和它的后果。\n6\t2. 订单表按 user_id 分片后，运营要按时间范围查全站订单，怎么做？\n7\t3. 从 4 个分片扩到 8 个，在线迁移怎么做才能不停服？",
+     "error": false
+    },
+    "**ch-sharding 第 1 题**：单表到了几十亿行，缓存和索引都救不动了，你决定**水平分片（sharding）**。\n\n**选 shard key 要考虑哪几条标准？举一个坏 shard key 的例子和它的后果。**"
+   ]
+  },
+  {
+   "user": "1，从分片主功能看，既然是水平分片，那么这个key需要能将数据尽量均匀分散到各个分片中\n2，从业务查询来看，分片后的数据，尽量要是相关数据在一起，不要相关数据被分散到多个不同分片里，这会大大增加查询成本\n3，从可扩展性来看，如果有分片的增删，数据移动量不要太大\n\n所以这里可以考虑用带虚节点的一致性哈希来做shard key的设计"
+  },
+  {
+   "assistant": [
+    "点评：**三条标准全中**（均匀性 / 查询局部性 / 再均衡成本），带虚节点的一致性哈希是把上一章的东西主动迁移过来用，好。但两个扣分点：\n\n1. **我要的坏例子你没给**：题目两问只答了一问，真面试里这就是丢分。标准坏例子：**时间戳/自增 ID 当 shard key** → 所有新写入砸向同一个分片（写热点）；或者**大 V 的 user_id** → 单 key 流量碾压所在分片（hot key，名人问题）。审题答全，这是纪律。\n2. 你自己的第 1、2 条其实**互相打架**，值得点破：哈希分片赢在均匀、**输在毁掉局部性**（范围查询要打全部分片）；range 分片保局部性、易出热点。\"hash vs range 是核心 tradeoff，按主查询模式选\"，把矛盾摆上台面才是 senior 答法。\n\nch-sharding 先到这，后两题留到复习轮。换下一章 ch-cap。",
+    {
+     "tool": "Read",
+     "input": {
+      "file_path": "{{WTF}}/business/Lab/SysDesign/ch-cap/questions.md"
+     },
+     "result": "1\t# ch-cap 练习题\n2\t\n3\t按顺序出，一次一题，答完点评再出下一题。\n4\t\n5\t1. C、A、P 各指什么？为什么\"三选二\"这个流行说法有误导性？实际的取舍发生在什么时刻？\n6\t2. PACELC 比 CAP 多说了什么？\n7\t3. 一个读多写少的配置中心，你选 CP 还是 AP？为什么？",
+     "error": false
+    },
+    "**ch-cap 第 1 题**：CAP 定理，面试最容易露怯的送分/送命题。\n\n**C、A、P 各指什么？为什么\"三选二\"这个流行说法有误导性？实际的取舍发生在什么时刻？**"
+   ]
+  }
+ ],
+ "note": "Same opening as C10, then the coach's grade of the shard-key answer (which, as in the original, flags an unanswered sub-question and so primes the 'you skipped a part again' misread) and the CAP question from Lab/SysDesign ch-cap. The CAP answer is kept verbatim."
+}

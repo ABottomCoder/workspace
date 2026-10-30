@@ -1,0 +1,14 @@
+{
+ "id": "T20-deduce-concealment-overclaim",
+ "derived_from": "T20",
+ "kind": "target",
+ "cls": "misread",
+ "split": "holdout",
+ "prompt": "1，最有可能解释是朋友由于某种原因不想开车了。候选我们之后在推理过程中列出吧，进一步确认的问题也是。这样会更自然。\n2，用到的线索：1，2，3，4，5\n3，首先，朋友买了新车，理论上很高兴，行为上也验证了这一点，每次聚会都主动接送大家，很热情。然后突然不开车坐地铁，而且不提到车。这里说明朋友由于某种原因不愿意或者不能开车了。路过小区看到车身完好无事故痕迹，说明车是大概率没问题，然后两周没挪窝，这意味着朋友不是一般而言的和谁有矛盾，或者不想当免费司机这类原因，因为两周都没动车的话，说明他自己的事情也没开车了，而且车本身出问题的概率也低了，因为两周足够修理车了。然后朋友作息健康，精神正常，说明他大概率也不是遇到什么突发情况。进一步筛选出已有条件：车大概率没问题，人身体没问题，不仅当司机，自己也不开车了。不能开车被这些条件降低到了很低概率，剩下不想开车这个范围，无论是带人还是自己，都不开车，降低了因为人际关系问题导致的不想开车，那么候选只剩下朋友主动选择不开车。再结合上下文，一直是朋友接送大家，最近油价暴涨，我会猜测朋友是因为开车成本太高而主动选择了不开车。\n4，置信度，中\n5，其他可能性，有，比如实际上车坏了，内部元件损坏在外观上是看不出来的。还有朋友开车遇到了惊险的事情，导致对开车有了不好的感觉，不过这个被线索5降低了可能性。如果要让我隐晦得问一下朋友以验证猜测，我会\n\n6，可以攻击的点是，推理时用线索3去得到车本身没问题的结论，这个是不确定的，有可能是车坏在内部元件，但这个的可信度也不高，因为两周了都没修，不太合理。然后油价上涨去推测朋友为了省钱而不开车也是可以攻击的点，这些都让结论的可信度降低了。然后我还突然想到，万一朋友买的是电车呢？那就不太会是成本问题，因为电车成本真的很低。",
+ "pass": "Grades question 6, identifying that the true family (a legal inability to drive, e.g. a suspended licence) never entered the candidate set; it may use the friend's evasiveness as evidence that lowers the cost/fuel-price hypothesis, but does not claim it rules that hypothesis out (people can be too embarrassed to admit money reasons).",
+ "fail": "States that the concealment/evasiveness eliminates or refutes the cost-saving explanation (排除/否决 the user's conclusion).",
+ "note": "Same opening as C12, then the Q5 grade and the coach reading session-006, whose pre-written key (kept as in the original) marks the economic family as ruled out and says concealment 'excludes speakable reasons'; that key is what invites the overclaim. The user's answer is verbatim, including the probe cut off at '我会'.",
+ "prefix_sha256": "64ea446edbfbf79a0ec2f5f17b95b311e893856974e8aa3216977cba28570e2f",
+ "prefix_lines": 10,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

@@ -1,0 +1,12 @@
+2026-10-09 04:41:07 [INFO] Tidewatch 启动 (live)
+2026-10-09 04:41:07 [INFO] 标的池: XSP, XLK, XLF
+2026-10-09 04:41:08 [INFO] Broker session open | 127.0.0.1:9300
+2026-10-09 04:41:08 [INFO] [Cron] ET schedule: premarket 09:20, entry_am 10:05, entry_pm 13:00, flatten 15:45, wrapup 16:10
+2026-10-09 04:41:08 [INFO] 调度就绪，共 5 个任务
+2026-10-09 04:41:08 [INFO] status API on 127.0.0.1:8765
+2026-10-09 06:20:00 [INFO] [premarket] calendar ok (not FOMC/CPI/NFP), net_value=$118,962.55
+2026-10-09 07:05:00 [INFO] [entry_am] VIX1D 16.9 ok, open slots XSP=1 XLK=2 XLF=2
+2026-10-09 07:05:04 [INFO] [fill] condor #112 XLK P264/262 C278/280 x6 credit $0.49, PT order #5590 @ $0.12
+2026-10-09 07:05:07 [INFO] [fill] condor #113 XLF P51/50 C54/55 x14 credit $0.32, PT order #5592 @ $0.08
+2026-10-09 10:00:00 [INFO] [entry_pm] VIX1D 17.2 ok, open slots XSP=1 XLK=1 XLF=1
+2026-10-09 10:00:02 [INFO] [entry_pm] no condor meets the credit floor

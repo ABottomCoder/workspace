@@ -1,0 +1,23 @@
+{
+ "id": "F04-fluent-bit",
+ "derived_from": "F04",
+ "kind": "fact",
+ "cls": "lookup",
+ "split": "holdout",
+ "prompt": "workspace 的文档里有提到 Fluent Bit 吗？在哪个文件？",
+ "pass": "Finds docs/playbooks/production-playbook.md.",
+ "fail": "Says no or names another file.",
+ "auto": {
+  "contains_any": [
+   "production-playbook"
+  ],
+  "calls_any": [
+   "Grep",
+   "Glob",
+   "Read"
+  ]
+ },
+ "auto_only": true,
+ "note": "Asks about the framework's own docs, so the answer comes from the framework under test, not the world.",
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

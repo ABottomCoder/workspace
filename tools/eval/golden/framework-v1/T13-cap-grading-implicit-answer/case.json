@@ -1,0 +1,14 @@
+{
+ "id": "T13-cap-grading-implicit-answer",
+ "derived_from": "T13",
+ "kind": "target",
+ "cls": "misread",
+ "split": "holdout",
+ "prompt": "C，consistency，一致性。\nA，availability，可用性\nP，partition tolerance，分区容错性\n\n三选二这个流行说法确实不够准确，因为在没有数据流动的时候，一个系统确实是可以同时做到CAP三者的，但只要有数据流动，网络就会出现分区，因为数据传输的物理时间不可避免，在这个期间就会形成网络分区。这也是为什么实际系统里P是必须有的。",
+ "pass": "Corrects the mechanism error (a partition is a communication break, not ordinary transfer latency) and, for 'when does the trade-off happen', credits that the user's answer implies it (P is unavoidable; without a partition all three hold), at most marking it implicit or shallow (e.g. missing what CP vs AP systems do during a partition).",
+ "fail": "Says the user did not answer the 'when does the trade-off happen' sub-question at all and counts it as omitted.",
+ "note": "Same opening as C10, then the coach's grade of the shard-key answer (which, as in the original, flags an unanswered sub-question and so primes the 'you skipped a part again' misread) and the CAP question from Lab/SysDesign ch-cap. The CAP answer is kept verbatim.",
+ "prefix_sha256": "2dcfe6b2a1f8ecf8fab424e49522be7eade7d23c142d84b6ca03bce21d65bf39",
+ "prefix_lines": 10,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

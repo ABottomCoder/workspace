@@ -1,0 +1,22 @@
+{
+ "id": "F02-reference-memories",
+ "derived_from": "F02",
+ "kind": "fact",
+ "cls": "absence-count",
+ "split": "holdout",
+ "prompt": "user/memory 里 reference 类型的记忆有几条？",
+ "pass": "3.",
+ "fail": "Any other number.",
+ "auto": {
+  "contains_any": [
+   "3"
+  ],
+  "calls_any": [
+   "Glob",
+   "Grep",
+   "Read"
+  ]
+ },
+ "auto_only": true,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

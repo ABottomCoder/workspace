@@ -1,0 +1,14 @@
+{
+ "id": "T23-novel-lifespan-contradiction",
+ "derived_from": "T23",
+ "kind": "target",
+ "cls": "misread",
+ "split": "holdout",
+ "prompt": "行，建个私有仓库推上去吧。\n\n还有你说天衡是双刃剑，能讲具体点吗？两头各是什么样子，我才好判断让岑舟站哪边。",
+ "pass": "Explains the double-edged 天衡 concretely while staying consistent with the established setting that higher cultivation extends lifespan (raising 祁默's cultivation so he does not age and die long before 岑舟 is a goal of the journey): no absolute lifespan cap that no cultivation can pass, and no ending premise that he must age and die before her unless it is reconciled with that setting. It may say it cannot create the GitHub repo with the tools it has.",
+ "fail": "Lists a rule such as a lifespan cap that everyone hits / his lifespan can never catch up, or an ending like 'repair 天衡 and accept that he ages first', that contradicts cultivation-based longevity without noting the conflict.",
+ "note": "Independent fictional setting (岑舟/祁默 as old friends, 天衡, 补天盟). The previous assistant turn itself writes the contradictory '寿元有上限' under 天衡's shackles (kept on purpose, it is the trap). The world BIBLE is the later T19-era snapshot (adds the realm-cap rules) and keeps that line unresolved.",
+ "prefix_sha256": "31e2714d6b193928562b32cdc5baf22d2be794eca1aa8d03a83859cdf5e2a00d",
+ "prefix_lines": 16,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

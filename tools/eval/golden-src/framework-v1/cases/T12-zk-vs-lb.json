@@ -1,0 +1,29 @@
+{
+ "id": "T12-zk-vs-lb",
+ "derived_from": "T12",
+ "kind": "target",
+ "cls": "unverified-claim",
+ "split": "dev",
+ "prompt": "我有个问题啊，在聊天系统那一节，关于笔记中解释为啥有了LB还要ZK，说到ZK断线重连时的优势，但我理解啊，一台聊天服务器宕机了，LB也可以发现并下掉它啊，然后客户端重连到仍然活跃的聊天服务器，ZK是有啥独特优势么",
+ "pass": "Agrees that LB health checks handle reconnect after a chat-server crash, and when naming what ZK uniquely adds, gives something an LB really cannot do, such as consensus on ownership with fencing (single sequencer per conversation, hash-ring or ID assignment), or says the gateway layer may not need ZK at all; a live membership view is at most called an optimisation.",
+ "fail": "Claims ZK's unique, necessary job is telling the rest of the system that a gateway died (session registry, senders, presence must be notified) without checking whether those parts cope without it (overwrite/TTL on reconnect, forward-failure fallback, client heartbeats).",
+ "note": "The ch-chat notes carry the original doc's claim (ZK's global membership view is the reconnect entry LB can't give, serving all components); the prefix is reduced to the session-focus exchange right before the question, dropping the unrelated mock-interview handoff.",
+ "start": "2026-10-12T15:30:00Z",
+ "turns": [
+  {
+   "user": "这个会话专注于系统设计，目前不做模拟面试，我会继续精读 SysDesign 的笔记，之后有问题会来找你"
+  },
+  {
+   "assistant": [
+    "好，这个会话之后只管系统设计。你精读笔记时有问题随时来问，我对照笔记原文回答；笔记写错或者缺的地方，我指出来，你确认后再改。"
+   ]
+  }
+ ],
+ "asserts": [
+  [
+   "contains",
+   "business/Lab/SysDesign/ch-chat/notes.md",
+   "ZooKeeper 的第二个职责 LB 给不了：全局成员视图"
+  ]
+ ]
+}

@@ -1,0 +1,14 @@
+{
+ "id": "C10-shard-key-grading",
+ "derived_from": "C10",
+ "kind": "control",
+ "cls": "over-caution",
+ "split": "guard",
+ "prompt": "1，从分片主功能看，既然是水平分片，那么这个key需要能将数据尽量均匀分散到各个分片中\n2，从业务查询来看，分片后的数据，尽量要是相关数据在一起，不要相关数据被分散到多个不同分片里，这会大大增加查询成本\n3，从可扩展性来看，如果有分片的增删，数据移动量不要太大\n\n所以这里可以考虑用带虚节点的一致性哈希来做shard key的设计",
+ "pass": "Grades directly: credits the three criteria (even spread, query locality, low rebalancing cost) and consistent hashing with virtual nodes; points out the missing bad-example part (e.g. timestamp/auto-increment key as a write hotspot, a celebrity user_id as a hot key) and/or the hash-vs-range locality trade-off; then moves on to the next question.",
+ "fail": "Misses that the bad-example sub-question went unanswered, marks the core criteria wrong, or stalls with questions.",
+ "note": "Scene moved to Lab/SysDesign ch-sharding with a two-turn prefix (coach reads the chapter question file and asks the two-part question); the user's answer is kept verbatim. The original's preceding message-queue questions were dropped.",
+ "prefix_sha256": "237a53cc40af46b729f2a70b084caa331d7e91850e1502b9c2fc98a45aa5e4ed",
+ "prefix_lines": 5,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}

@@ -1,0 +1,64 @@
+{
+ "id": "T19-novel-crossrealm-fix",
+ "derived_from": "T19",
+ "kind": "target",
+ "cls": "misread",
+ "split": "dev",
+ "start": "2026-10-14T01:03:00Z",
+ "prompt": "等下，我发现这里有个漏洞。敌人要对付岑舟，根本不用打赢她：凑一批不要命的死士跟着她进沉壤，一起把招式往上顶，硬撑到超载，界一塌，她这个最强的人也就跟着没了。最强的被一群炮灰送走，太便宜了。能不能修一下？比如谁超载谁挨天衡的雷罚，自己扛后果，而不是整个界陪葬。",
+ "pass": "Proposes fixes for the expendable-fighters overload exploit that still hold when the enemy brings cultivators from a higher realm, who are suppressed to exactly the lower realm's cap (rule set in the first turn and `[定]` in the BIBLE: anyone from 浮屿/星阙 entering 沉壤 sits at 化形后期): e.g. no realm-wide collapse at all (excess power clipped, punishment lands on the caster), or an explicit cost/limit on cross-realm travel; it does not rely on near-cap fighters being scarce.",
+ "fail": "Relies on a fix like 'the threshold is per single caster and near-cap cultivators are extremely rare, so expendable fighters can't trigger it', ignoring that higher-realm cultivators entering a lower realm are plentiful at its cap.",
+ "note": "Independent fictional setting (岑舟/祁默, 沉壤/浮屿/星阙, 天衡). Two setting turns fix the realm cap and the per-technique cap; the BIBLE in the world is the state right before the prompt, with no fix for the exploit (it also holds the earlier T23-era lines).",
+ "asserts": [
+  [
+   "contains",
+   "business/Lab/Ember/docs/BIBLE.md",
+   "上界修士进入下界，修为被天衡压到该界的上限"
+  ],
+  [
+   "contains",
+   "business/Lab/Ember/docs/BIBLE.md",
+   "整个界随之崩塌"
+  ]
+ ],
+ "turns": [
+  {
+   "user": "上界强者能不能下界，我想好了：每个界都有一个承载上限，沉壤最多撑到化形后期，浮屿最多踏虚初期，星阙不设限。从上面下来的人，不管原本多高，一进来就被天衡压到这个界的上限，正好卡在那儿。这样岑舟去沉壤也只是化形后期，跟当地的顶尖高手、还有同样从上面下来的人在一个档位上，真动起手来有得打。"
+  },
+  {
+   "assistant": [
+    "这样定比「上界强者不许下界」好，因为它不是禁令，是一块**天花板**：每一界能装下的修为有个顶，谁来都一样。\n\n它带来的东西：\n\n1. **岑舟下界仍然强，但不再无解**：在沉壤她和别人一样卡在化形后期，输赢看经验和手段，不再看修为差。\n2. **和天衡「像一杆秤」对上了**：不是有谁在管，而是这杆秤只称得动这么多。\n3. **每一界的气质不同**：星阙不设限，最高的人只有在那里才是真正的最高；越往下，大家越被拉平。\n\n有一处要你定：**被压下去的修为去哪了？** 我先按「不消失，离开该界就恢复」记成 `[提议]`。\n\n先把上限记进 BIBLE：",
+    {
+     "tool": "Edit",
+     "input": {
+      "file_path": "{{WTF}}/business/Lab/Ember/docs/BIBLE.md",
+      "old_string": "### 3.2 承载与压制\n- `[待定]` 上界强者下界有没有限制\n",
+      "new_string": "### 3.2 承载与压制\n- `[定]` 每一界有承载上限：沉壤最高化形后期，浮屿最高踏虚初期，星阙不设限。\n  上界修士进入下界，修为被天衡压到该界的上限，正好卡在上限，不多不少\n- `[提议]` 被压下去的修为不会消失，离开该界即恢复\n"
+     },
+     "result": "The file {{WTF}}/business/Lab/Ember/docs/BIBLE.md has been updated successfully.",
+     "error": false
+    },
+    "记好了：承载上限标成 `[定]`，修为恢复那条先标 `[提议]`。"
+   ]
+  },
+  {
+   "user": "对，出了这个界就回来。再加一条：招式也有上限。一招打出去的力量要是超过这个界能承的量，周围空中会先冒出冰裂一样的纹路提醒；还硬要打，整个界就塌了，里面的人一个都跑不掉。所以岑舟在下界出手得收着，大招基本用不了。"
+  },
+  {
+   "assistant": [
+    "这样就有了两道上限，管的是不同的东西：\n\n| 上限 | 管什么 | 超出会怎样 |\n|---|---|---|\n| 承载上限 | 你在这一界**能是**多强 | 进门就被天衡压下去 |\n| 单招上限 | 你在这一界**能打出**多重的一招 | 先出界纹，再强行就整界崩塌 |\n\n**它能长出来的东西**\n\n1. **界纹是看得见的读数**：读者看到纹路就知道快到边了，不用报数值。\n2. **打斗变成收着打**：真正的高手比的是在界纹前停得住，这和岑舟「先算代价」的性子正好对上。\n3. **崩塌的分量够重**：整界陪葬，越线本身就是一场大戏。\n\n两个细节我先记成 `[提议]` / `[待定]`：\n- 界纹出现到崩塌之间留多久？我建议约十息，给收手或抢断留余地。\n- 崩塌之后那片界会怎样？我倾向变成没有灵气的死地。",
+    {
+     "tool": "Edit",
+     "input": {
+      "file_path": "{{WTF}}/business/Lab/Ember/docs/BIBLE.md",
+      "old_string": "- `[提议]` 被压下去的修为不会消失，离开该界即恢复\n",
+      "new_string": "- `[定]` 被压下去的修为不会消失，离开该界即恢复\n- `[定]` 单招上限：一招之力超过所在界的承载，四周空中先浮现冰裂般的「界纹」示警；\n  仍强行出手，整个界随之崩塌，界内无人能逃\n- `[提议]` 界纹出现到崩塌之间约有十息，给打斗留出收手或抢断的余地\n- `[提议]` 界纹人人看得见，是读者也看得懂的危险读数，不用报数值\n- `[待定]` 崩塌之后界的残骸会怎样（Claude 建议：化为没有灵气的死地）\n"
+     },
+     "result": "The file {{WTF}}/business/Lab/Ember/docs/BIBLE.md has been updated successfully.",
+     "error": false
+    },
+    "BIBLE 更新了：修为恢复和单招上限标成 `[定]`，十息缓冲和界纹读数是 `[提议]`，残骸是 `[待定]`。\n\n要你拍板两件事：\n1. 界纹到崩塌之间**十息**的缓冲，你同意吗？\n2. 崩塌后的残骸变成死地可以吗，还是你另有想法？"
+   ]
+  }
+ ]
+}

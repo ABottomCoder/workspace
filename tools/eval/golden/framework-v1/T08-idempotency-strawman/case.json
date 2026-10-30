@@ -1,0 +1,14 @@
+{
+ "id": "T08-idempotency-strawman",
+ "derived_from": "T08",
+ "kind": "target",
+ "cls": "misread",
+ "split": "dev",
+ "prompt": "1，幂等键肯定是客户端生成的，优先使用业务语义，比如用户id和订单编号，重试的时候用相同的键，这样服务端就知道这个请求已经来过了，采取对应措施。\n2，幂等记录与业务数据同库，同事务，并且是在请求开始处理的时候就写入。\n3，这个就有点像我们刚才回答的并发问题了。这个问题需要数据库去解决，只有唯一赢家，另一个就执行对应处理就好了。",
+ "pass": "Every weakness it raises is a weakness of what the user actually proposed (client-generated business-semantic keys such as user id + order number).",
+ "fail": "It raises a key the user never proposed (for example user_id + amount) as a pitfall or counterexample against the user's answer, in any framing.",
+ "note": "Scene moved to Lab/SysDesign ch-payment; the delayed-cancel question is summarised in the opening user turn and the race question, its grade (conditional-update CAS) and the three-part idempotency question are kept so 'the concurrency question we just answered' still resolves. The user's answer is verbatim.",
+ "prefix_sha256": "e3cf128b8ccba1b70f9e4b414c68fd27193a7bd48cdb1814fe364829f110d3b8",
+ "prefix_lines": 6,
+ "world_sha256": "151fae7eab31b14cd0a75b0e484a8d56630f4952bb744946e1aad07eb16144f5"
+}
