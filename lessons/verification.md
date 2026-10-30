@@ -259,3 +259,9 @@ How to prove a change, fix, measurement or claim is actually true before reporti
 **Root cause:** Isolation was assumed from configuration and from the agent's self-report, never tested by trying what it must not do. A model's account of its own capabilities reflects its context, not what the harness registered.
 **Rule:** Before an agent touches anything that maps to real data, prove each isolation layer alone with a canary: make it attempt the forbidden write (to a harmless file) with only that layer active, and check the canary is absent. Record every tool call's result and stop the run if a forbidden one succeeds. Judge capability by what a call returns, never by what the agent says it has.
 **Seen:** 1
+
+### Pilot a batch end to end before running it at scale
+**Mistake:** Launched 720 eval runs (about 50 minutes) as the first full pass of a new pipeline; the run step had been tried once per case, but judging, reporting and the slot split had not. Only afterwards did it show that a slot file's Windows line endings made the tool silently skip three cases.
+**Root cause:** "Each step works alone" was treated as "the pipeline works"; the first end-to-end pass was the expensive one.
+**Rule:** Before any batch of tens or hundreds of runs, push one or two items through the whole chain (run, judge, report, any split or merge step) and check the counts and outputs at every stage. Scale up only after that passes, and still check per-group counts at the start of the full run, not at the end.
+**Seen:** 1
